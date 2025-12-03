@@ -6,13 +6,20 @@ import os
 import re
 
 def normalize_title(raw_title: str) -> str:
-    # {J}apanese -> Japanese のように1文字波括弧を除く
     raw_title = re.sub(r'{([A-Za-z])}', r'\1', raw_title)
+    small_words = {
+        "a", "an", "and", "as", "at", "but", "by", "en", "for",
+        "if", "in", "of", "on", "or", "the", "to", "v", "vs", "via", "with"
+    }
 
-    # titlecase.com 風に Title Case 化
-    tc = titlecase(raw_title)
+    def small_word_callback(word, **kwargs):
+        index = kwargs.get("index", 0)
+        words = kwargs.get("words", [])
+        if 0 < index < len(words) - 1 and word.lower() in small_words:
+            return word.lower()
+        return word
 
-    return tc
+    return titlecase(raw_title, callback=small_word_callback)
 
 def simplify_bibtex_entry(raw_bib: str, new_key: str) -> str:
     """
@@ -27,9 +34,8 @@ def simplify_bibtex_entry(raw_bib: str, new_key: str) -> str:
         m = re.search(r'title\s*=\s*{([^}]+)}', raw_bib, re.DOTALL)
 
     title = m.group(1).strip() if m else "Unknown Title"
-
-    # ← ここで title を titlecase.com 風にする！
-    title = normalize_title(title)
+    if title:
+        title = normalize_title(title)
 
     # --- author ---
     author = ""
@@ -55,10 +61,22 @@ def simplify_bibtex_entry(raw_bib: str, new_key: str) -> str:
     #   "(TSAR-2022)" -> "TSAR"
     #   "({LREC} 2018)" -> "LREC"
     short_booktitle = "Proceedings"
-    m = re.search(r'\((?:\{)?([A-Za-z]+)(?:[^)]*)\)\s*$', long_booktitle)
+    m = re.search(r'\((?:\{)?([A-Za-z][A-Za-z0-9\s\-/]+)(?:[^)]*)\)\s*$', long_booktitle)
     if m:
-        acronym = m.group(1)
-        short_booktitle = f"Proc. of {acronym}"
+        acronym_segment = m.group(1)
+        raw_parts = re.split(r'[-/\s]+', acronym_segment)
+        parts = []
+        for part in raw_parts:
+            if not part:
+                continue
+            part_upper = part.upper()
+            if re.fullmatch(r'\d+', part_upper):
+                continue
+            parts.append(part_upper)
+        if parts:
+            if len(parts) > 1:
+                parts = sorted(parts)
+            short_booktitle = f"Proc. of {'-'.join(parts)}"
     else:
         # 括弧から取れない場合の雑なフォールバック
         if "LREC" in long_booktitle:
@@ -96,7 +114,7 @@ def simplify_bibtex_entry(raw_bib: str, new_key: str) -> str:
 
     # --- 出力組み立て ---
     lines = []
-    lines.append(f"@inproceedings{{{new_key},")
+    lines.append("@inproceedings{KEY,")
     if title:
         lines.append(f"    title = {{{{{title}}}}},")
     if author:
