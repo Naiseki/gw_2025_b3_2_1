@@ -1,0 +1,11 @@
+[project]
+name = "gw-2025-b3-2-1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dotenv>=0.9.9",
+    "slack-bolt>=1.27.0",
+    "titlecase>=2.4.1",
+]
