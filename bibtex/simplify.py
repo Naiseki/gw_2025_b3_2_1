@@ -3,6 +3,7 @@
 from .utils import extract_field, normalize_title, BaseParser
 from .acl_parser import ACLParser
 from .arxiv_parser import ArxivParser
+from .jnlp_parser import JNLPParser
 
 
 class GenericParser(BaseParser):
@@ -21,18 +22,18 @@ class GenericParser(BaseParser):
         if title:
             lines.append(f"    title = {{{{{title}}}}},")
         if author:
-            lines.append(f"    author = \"{author}\",")
+            lines.append(f"    author = {{{author}}},")
 
         if journal:
-            lines.append(f"    journal = \"{journal}\",")
+            lines.append(f"    journal = {{{journal}}},")
         if booktitle:
-            lines.append(f"    booktitle = \"{booktitle}\",")
+            lines.append(f"    booktitle = {{{booktitle}}},")
 
         if year:
-            lines.append(f"    year = \"{year}\",")
+            lines.append(f"    year = {{{year}}},")
 
         if url:
-            lines.append(f"    url = \"{url}\",")
+            lines.append(f"    url = {{{url}}},")
 
         lines.append("}")
         return "\n".join(lines)
@@ -45,12 +46,14 @@ def detect_source(raw_bib: str) -> str:
         return "arxiv"
     if "anthology" in t or "aclweb" in t or "aclanthology" in t:
         return "acl"
+    if "jnlp." in t:
+        return "jnlp"
     return "generic"
-
 
 _PARSERS: dict[str, BaseParser] = {
     "acl": ACLParser(),
     "arxiv": ArxivParser(),
+    "jnlp": JNLPParser(),
     "generic": GenericParser(),
 }
 
