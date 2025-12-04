@@ -9,10 +9,16 @@ SMALL_WORDS = {
     "if", "in", "of", "on", "or", "the", "to", "v", "vs", "via", "with",
 }
 
+def strip_all_braces(text: str) -> str:
+    while re.search(r'{[^{}]*}', text):
+        text = re.sub(r'{([^{}]*)}', r'\1', text)
+    return text
+
 
 def normalize_title(raw_title: str) -> str:
     """BibTeX の {A} 指定を外しつつ titlecase を適用する。"""
-    raw_title = re.sub(r'{([A-Za-z])}', r'\1', raw_title)
+    raw_title = strip_all_braces(raw_title)
+    print("Raw title:", raw_title)
 
     def small_word_callback(word, **kwargs):
         index = kwargs.get("index", 0)
@@ -56,7 +62,7 @@ def format_authors(raw_author: str, threshold: int = 10) -> str:
         return ""
     if len(authors) >= threshold:
         return authors[0]
-    return " and ".join(authors)
+    return " and\n      ".join(authors)
 
 
 class BaseParser(ABC):
