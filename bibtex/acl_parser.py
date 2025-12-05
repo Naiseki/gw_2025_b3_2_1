@@ -14,7 +14,8 @@ class ACLParser(BaseParser):
 
         year = extract_field(raw_bib, "year")
         pages = extract_field(raw_bib, "pages")
-        url = (extract_field(raw_bib, "url") or "").rstrip("/")
+        url = (extract_field(raw_bib, "url") or "").strip("<>").rstrip("/")
+
 
         lines = ["@inproceedings{KEY,"]
         if title:
