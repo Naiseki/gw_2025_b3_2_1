@@ -8,7 +8,7 @@ from .jnlp_parser import JNLPParser
 
 class GenericParser(BaseParser):
     """ACL でも arXiv でもなさそうなもの用のゆるいフォールバック。"""
-    def parse(self, raw_bib: str, new_key: str) -> str:
+    def parse(self, raw_bib: str, new_key: str, use_short: bool = False) -> str:
         title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
         author = extract_field(raw_bib, "author")
         journal = extract_field(raw_bib, "journal")
@@ -58,8 +58,14 @@ _PARSERS: dict[str, BaseParser] = {
 }
 
 
-def simplify_bibtex_entry(raw_bib: str, new_key: str) -> str:
-    """外から呼ぶのは基本これだけ。Slack からもこれを叩く。"""
+def simplify_bibtex_entry(raw_bib: str, new_key: str, use_short: bool = False) -> str:
+    """外から呼ぶのは基本これだけ。Slack からもこれを叩く。
+    
+    Args:
+        raw_bib: 整形前のBibTeX文字列
+        new_key: 新しい引用キー
+        use_short: True で短縮形booktitle（Proc. of ACL）、False で正式名称
+    """
     source = detect_source(raw_bib)
     parser = _PARSERS.get(source, _PARSERS["generic"])
-    return parser.parse(raw_bib, new_key)
+    return parser.parse(raw_bib, new_key, use_short=use_short)

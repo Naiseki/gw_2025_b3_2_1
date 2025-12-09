@@ -21,10 +21,15 @@ def handle_message(event, say, client):
     if not (is_dm or is_mentioned):
         return
 
-    raw_bib = text.strip()
+    # オプション解析: -s または --short で短縮形booktitleを使用（デフォルトは正式名称）
+    # 単語境界をチェックして誤検出を防ぐ
+    import re
+    use_short = bool(re.search(r'(^|\s)-s(\s|$)', text) or re.search(r'(^|\s)--short(\s|$)', text))
+    raw_bib = re.sub(r'(^|\s)--short(\s|$)', r'\1\2', text)
+    raw_bib = re.sub(r'(^|\s)-s(\s|$)', r'\1\2', raw_bib).strip()
     if not raw_bib:
         return
 
     new_key = "KEY"
-    simplified = simplify_bibtex_entry(raw_bib, new_key)
+    simplified = simplify_bibtex_entry(raw_bib, new_key, use_short=use_short)
     say(f"```{simplified}```")
