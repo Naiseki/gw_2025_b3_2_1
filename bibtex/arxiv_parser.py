@@ -3,7 +3,7 @@
 from .utils import BaseParser, extract_field, normalize_title, format_authors
 
 class ArxivParser(BaseParser):
-    def parse(self, raw_bib: str, new_key: str, use_short: bool = False) -> str:
+    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
         title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
         author = extract_field(raw_bib, "author")
         year = extract_field(raw_bib, "year")
