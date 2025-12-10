@@ -8,7 +8,7 @@ from .utils import (
 )
 
 class JNLPParser(BaseParser):
-    def parse(self, raw_bib: str, new_key: str) -> str:
+    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
         title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
         author = extract_field(raw_bib, "author")
         journal = extract_field(raw_bib, "journal")

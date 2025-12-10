@@ -4,7 +4,7 @@ import re
 from .utils import BaseParser, extract_field, normalize_title, build_short_booktitle, format_authors
 
 class ACLParser(BaseParser):
-    def parse(self, raw_bib: str, new_key: str) -> str:
+    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
         title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
         author = extract_field(raw_bib, "author")
 
@@ -23,10 +23,16 @@ class ACLParser(BaseParser):
         if author:
             lines.append(f"    author = \"{format_authors(author, line_break_after_and=True)}\",")
 
-        if short_booktitle:
+        # booktitle_modeに応じて出力を切り替え
+        if booktitle_mode == "short" and short_booktitle:
             lines.append(f"    booktitle = \"{short_booktitle}\",")
-        if long_booktitle_clean:
+        elif booktitle_mode == "long" and long_booktitle_clean:
             lines.append(f"    booktitle = \"{long_booktitle_clean}\",")
+        else:  # both
+            if short_booktitle:
+                lines.append(f"    booktitle = \"{short_booktitle}\",")
+            if long_booktitle_clean:
+                lines.append(f"    booktitle = \"{long_booktitle_clean}\",")
         if year:
             lines.append(f"    year = \"{year}\",")
         if pages:

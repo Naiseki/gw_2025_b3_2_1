@@ -66,6 +66,10 @@ def format_authors(raw_author: str, threshold: int = 10, line_break_after_and: b
 
 class BaseParser(ABC):
     @abstractmethod
-    def parse(self, raw_bib: str, new_key: str) -> str:
-        """raw_bib を整形して返す。"""
+    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
+        """raw_bib を整形して返す。
+        
+        Args:
+            booktitle_mode: "short"（短縮形）, "long"（正式名称）, "both"（両方）
+        """
         ...
