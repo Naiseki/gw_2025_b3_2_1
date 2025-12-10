@@ -13,7 +13,14 @@ app = App(token=os.getenv("SLACK_BOT_TOKEN"))
 
 @app.event("message")
 def message_event(event, say, client):
-    handle_message(event, say, client)
+    try:
+        handle_message(event, say, client)
+    except OSError as e:
+        say(f"{e.__class__.__name__} エラーが発生しました: {e}")
+    except AttributeError as e:
+        say(f"{e.__class__.__name__} 属性エラーが発生しました: {e}")
+    except NameError as e:
+        say(f"{e.__class__.__name__} 名前エラーが発生しました: {e}")
 
 if __name__ == "__main__":
     handler = SocketModeHandler(app, os.getenv("SLACK_APP_TOKEN"))
