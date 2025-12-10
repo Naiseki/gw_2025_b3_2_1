@@ -22,11 +22,23 @@ def handle_message(event, say, client):
     if not (is_dm or is_mentioned):
         return
 
+    # メンションされていたら@idの部分をtextから削除
+    if is_mentioned:
+        text = re.sub(rf"<@{bot_user_id}>", "", text).strip()
+
     # オプション解析: -s で短縮形、-l で正式名称、何もなしで両方表示
-    # 単語境界をチェックして誤検出を防ぐ
-    first_line = text.splitlines()[0]
-    has_short = bool(re.search(r'(^|\s)-s(\s|$)', first_line) or re.search(r'(^|\s)--short(\s|$)', first_line))
-    has_long = bool(re.search(r'(^|\s)-l(\s|$)', first_line) or re.search(r'(^|\s)--long(\s|$)', first_line))
+    # オプションは @の前に書かないといけない
+    before_at, at_and_after = "", ""
+    if "@" in text:
+        at_index = text.index("@")
+        before_at = text[:at_index]
+        at_and_after = text[at_index:]
+    else:
+        before_at = text
+        at_and_after = ""
+
+    has_short = bool(re.search(r'(^|\s)-s(\s|$)', before_at) or re.search(r'(^|\s)--short(\s|$)', before_at))
+    has_long = bool(re.search(r'(^|\s)-l(\s|$)', before_at) or re.search(r'(^|\s)--long(\s|$)', before_at))
     
     # booktitle_mode: "short", "long", "both"
     if has_short:
@@ -36,18 +48,8 @@ def handle_message(event, say, client):
     else:
         booktitle_mode = "both"
     
-    
-    # オプションをfirst_lineから削除
-    cleaned_first_line = re.sub(r'(^|\s)--short(\s|$)', r'\1\2', first_line)
-    cleaned_first_line = re.sub(r'(^|\s)-s(\s|$)', r'\1\2', cleaned_first_line)
-    cleaned_first_line = re.sub(r'(^|\s)--long(\s|$)', r'\1\2', cleaned_first_line)
-    cleaned_first_line = re.sub(r'(^|\s)-l(\s|$)', r'\1\2', cleaned_first_line).strip()
-    
-    # 残りの行を取得
-    remaining_lines = "\n".join(text.splitlines()[1:]) if len(text.splitlines()) > 1 else ""
-    
     # raw_bibを構築
-    raw_bib = cleaned_first_line + ("\n" + remaining_lines if remaining_lines else "").strip()
+    raw_bib = at_and_after.strip()
     if not raw_bib:
         say("有効なBibTeXエントリが見つかりませんでした。")
         return
