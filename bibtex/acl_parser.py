@@ -21,7 +21,7 @@ class ACLParser(BaseParser):
         if title:
             lines.append(f"    title = {{{{{title}}}}},")
         if author:
-            lines.append(f"    author = \"{format_authors(author)}\",")
+            lines.append(f"    author = \"{format_authors(author, line_break_after_and=True)}\",")
 
         if short_booktitle:
             lines.append(f"    booktitle = \"{short_booktitle}\",")

@@ -18,7 +18,6 @@ def strip_all_braces(text: str) -> str:
 def normalize_title(raw_title: str) -> str:
     """BibTeX の {A} 指定を外しつつ titlecase を適用する。"""
     raw_title = strip_all_braces(raw_title)
-    print("Raw title:", raw_title)
 
     def small_word_callback(word, **kwargs):
         index = kwargs.get("index", 0)
@@ -55,14 +54,14 @@ def build_short_booktitle(long_booktitle: str) -> str:
     return short_booktitle
 
 
-def format_authors(raw_author: str, threshold: int = 10) -> str:
+def format_authors(raw_author: str, threshold: int = 10, line_break_after_and: bool = False) -> str:
     """著者数が threshold 以上なら先頭のみ、それ未満なら全員を返す。"""
     authors = [a.strip() for a in re.split(r"\s+and\s+", raw_author) if a.strip()]
     if not authors:
         return ""
     if len(authors) >= threshold:
         return authors[0]
-    return " and\n      ".join(authors)
+    return " and\n      ".join(authors) if line_break_after_and else " and ".join(authors)
 
 
 class BaseParser(ABC):

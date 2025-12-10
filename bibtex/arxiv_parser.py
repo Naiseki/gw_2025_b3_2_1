@@ -11,9 +11,9 @@ class ArxivParser(BaseParser):
         eprint = extract_field(raw_bib, "eprint")  # arXiv ID が入ることが多い
 
         lines = [f"@article{{{new_key},"]
+        lines.append(f"    title = {{{{{title}}}}},")
         if author:
             lines.append(f"    author = {{{format_authors(author)}}},")
-        lines.append(f"    title = {{{{{title}}}}},")
 
         if eprint:
             lines.append(f"    journal = {{arXiv:{eprint}}},")
