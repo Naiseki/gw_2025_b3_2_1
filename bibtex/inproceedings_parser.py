@@ -3,7 +3,7 @@
 import re
 from .utils import BaseParser, extract_field, normalize_title, build_short_booktitle, format_authors
 
-class ACLParser(BaseParser):
+class InproceedingsParser(BaseParser):
     def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
         self.check_required_fields(raw_bib, ["title", "author", "booktitle", "pages", "year", "url"])
 
@@ -23,7 +23,7 @@ class ACLParser(BaseParser):
         if title:
             lines.append(f"    title = {{{{{title}}}}},")
         if author:
-            lines.append(f"    author = \"{format_authors(author, line_break_after_and=True)}\",")
+            lines.append(f"    author = \"{format_authors(author)}\",")
 
         # booktitle_modeに応じて出力を切り替え
         if booktitle_mode == "short" and short_booktitle:

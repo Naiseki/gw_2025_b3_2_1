@@ -53,6 +53,19 @@ def build_short_booktitle(long_booktitle: str) -> str:
             short_booktitle = f"Proc. of {'-'.join(parts)}"
     return short_booktitle
 
+def build_short_journal(long_journal: str) -> str:
+    """括弧内の略称から短縮形ジャーナル名を生成する。"""
+    short_journal = long_journal
+    match = re.search(r'\((?:\{)?([A-Za-z][A-Za-z0-9\s\-/]+)', long_journal)
+    if match:
+        parts = re.split(r'[-/\s]+', match.group(1))
+        parts = [p.upper() for p in parts if p and not p.isdigit()]
+        if parts:
+            if len(parts) > 1:
+                parts = sorted(parts)
+            short_journal = '-'.join(parts)
+    return short_journal
+
 
 def format_authors(raw_author: str, threshold: int = 10, line_break_after_and: bool = False) -> str:
     """著者数が threshold 以上なら先頭のみ、それ未満なら全員を返す。"""

@@ -4,6 +4,8 @@ from .utils import extract_field, normalize_title, BaseParser
 from .acl_parser import ACLParser
 from .arxiv_parser import ArxivParser
 from .jnlp_parser import JNLPParser
+from .article_parser import ArticleParser
+from .inproceedings_parser import InproceedingsParser
 
 
 class GenericParser(BaseParser):
@@ -42,18 +44,18 @@ class GenericParser(BaseParser):
 def detect_source(raw_bib: str) -> str:
     """ざっくりソース判定。必要に応じて強化していける部分。"""
     t = raw_bib.lower()
+    if "@inproceedings" in t:
+        return "inproceedings"
+    if "@article" in t:
+        return "article"
     if "arxiv" in t or "eprint" in t:
         return "arxiv"
-    if "anthology" in t or "aclweb" in t or "aclanthology" in t:
-        return "acl"
-    if "jnlp." in t:
-        return "jnlp"
     return "generic"
 
 _PARSERS: dict[str, BaseParser] = {
-    "acl": ACLParser(),
+    "article": ArticleParser(),
+    "inproceedings": InproceedingsParser(),
     "arxiv": ArxivParser(),
-    "jnlp": JNLPParser(),
     "generic": GenericParser(),
 }
 

@@ -11,7 +11,6 @@ class ACLParser(BaseParser):
         author = extract_field(raw_bib, "author")
 
         long_booktitle = extract_field(raw_bib, "booktitle")
-        print(f"long_booktitle: {long_booktitle}")
         long_booktitle_clean = re.sub(r"\s*\([^)]*\)\s*$", "", long_booktitle).strip()
         short_booktitle = build_short_booktitle(long_booktitle)
 
