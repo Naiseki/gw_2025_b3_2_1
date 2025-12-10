@@ -51,7 +51,7 @@ def _get_short_conference_name(long_booktitle: str) -> str:
 
     journal_name_dict = load_journal_name_dict()
     if not journal_name_dict:
-        raise ValueError("journal_name_dict is required to get conference name.")
+        raise ValueError("論文誌名辞書の読み込みに失敗しました。")
 
     # まず辞書で探す
     if long_booktitle in journal_name_dict:
