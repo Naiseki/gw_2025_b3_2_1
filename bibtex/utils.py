@@ -18,7 +18,6 @@ def strip_all_braces(text: str) -> str:
 def normalize_title(raw_title: str) -> str:
     """BibTeX の {A} 指定を外しつつ titlecase を適用する。"""
     raw_title = strip_all_braces(raw_title)
-    print("Raw title:", raw_title)
 
     def small_word_callback(word, **kwargs):
         index = kwargs.get("index", 0)
@@ -55,18 +54,35 @@ def build_short_booktitle(long_booktitle: str) -> str:
     return short_booktitle
 
 
-def format_authors(raw_author: str, threshold: int = 10) -> str:
+def format_authors(raw_author: str, threshold: int = 10, line_break_after_and: bool = False) -> str:
     """著者数が threshold 以上なら先頭のみ、それ未満なら全員を返す。"""
     authors = [a.strip() for a in re.split(r"\s+and\s+", raw_author) if a.strip()]
     if not authors:
         return ""
     if len(authors) >= threshold:
         return authors[0]
-    return " and\n      ".join(authors)
+    return " and\n      ".join(authors) if line_break_after_and else " and ".join(authors)
+
+def find_missing_fields(raw_bib: str, fields: list[str]) -> list[str]:
+    """指定されたフィールドがすべて存在するかを確認する。"""
+    missing_fields = []
+    for field in fields:
+        if not re.search(rf"\b{field}\s*=", raw_bib):
+            missing_fields.append(field)
+    return missing_fields
 
 
 class BaseParser(ABC):
     @abstractmethod
-    def parse(self, raw_bib: str, new_key: str) -> str:
-        """raw_bib を整形して返す。"""
+    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
+        """raw_bib を整形して返す。
+        
+        Args:
+            booktitle_mode: "short"（短縮形）, "long"（正式名称）, "both"（両方）
+        """
         ...
+    
+    def check_required_fields(self, raw_bib: str, required_fields: list[str]) -> None:
+        missing_fields = find_missing_fields(raw_bib, required_fields)
+        if missing_fields:
+            raise ValueError(f"必要なフィールドがありません: {', '.join(missing_fields)}")
