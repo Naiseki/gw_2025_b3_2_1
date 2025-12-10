@@ -63,6 +63,14 @@ def format_authors(raw_author: str, threshold: int = 10, line_break_after_and: b
         return authors[0]
     return " and\n      ".join(authors) if line_break_after_and else " and ".join(authors)
 
+def find_missing_fields(raw_bib: str, fields: list[str]) -> list[str]:
+    """指定されたフィールドがすべて存在するかを確認する。"""
+    missing_fields = []
+    for field in fields:
+        if not re.search(rf"\b{field}\s*=", raw_bib):
+            missing_fields.append(field)
+    return missing_fields
+
 
 class BaseParser(ABC):
     @abstractmethod
@@ -73,3 +81,8 @@ class BaseParser(ABC):
             booktitle_mode: "short"（短縮形）, "long"（正式名称）, "both"（両方）
         """
         ...
+    
+    def check_required_fields(self, raw_bib: str, required_fields: list[str]) -> None:
+        missing_fields = find_missing_fields(raw_bib, required_fields)
+        if missing_fields:
+            raise ValueError(f"必要なフィールドがありません: {', '.join(missing_fields)}")

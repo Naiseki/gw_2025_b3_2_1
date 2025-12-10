@@ -5,10 +5,13 @@ from .utils import BaseParser, extract_field, normalize_title, build_short_bookt
 
 class ACLParser(BaseParser):
     def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
+        self.check_required_fields(raw_bib, ["title", "author", "booktitle", "year"])
+
         title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
         author = extract_field(raw_bib, "author")
 
         long_booktitle = extract_field(raw_bib, "booktitle")
+        print(f"long_booktitle: {long_booktitle}")
         long_booktitle_clean = re.sub(r"\s*\([^)]*\)\s*$", "", long_booktitle).strip()
         short_booktitle = build_short_booktitle(long_booktitle)
 
