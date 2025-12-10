@@ -4,6 +4,7 @@ import json
 _journal_name_dict: dict[str, str] = None
 
 def load_journal_name_dict() -> dict[str, str] | None:
+    global _journal_name_dict
     if _journal_name_dict is None:
         try:
             with open("resources/journal_names.json", "r") as f:

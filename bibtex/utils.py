@@ -3,6 +3,7 @@
 import re
 from abc import ABC, abstractmethod
 from titlecase import titlecase
+from load_resource import load_journal_name_dict
 
 SMALL_WORDS = {
     "a", "an", "and", "as", "at", "but", "by", "en", "for",
@@ -41,17 +42,35 @@ def extract_field(raw_bib: str, field: str) -> str:
 
 
 def build_short_booktitle(long_booktitle: str) -> str:
-    """括弧内の略称から Proc. of ... を生成する（ACL向け）。"""
-    short_booktitle = "Proceedings"
-    match = re.search(r'\((?:\{)?([A-Za-z][A-Za-z0-9\s\-/]+)', long_booktitle)
-    if match:
-        parts = re.split(r'[-/\s]+', match.group(1))
-        parts = [p.upper() for p in parts if p and not p.isdigit()]
-        if parts:
-            if len(parts) > 1:
-                parts = sorted(parts)
-            short_booktitle = f"Proc. of {'-'.join(parts)}"
-    return short_booktitle
+    conf = _get_short_conference_name(long_booktitle)
+    return f"Proc. of {conf}" if conf else "Proceedings"
+
+def _get_short_conference_name(long_booktitle: str) -> str:
+    if not long_booktitle:
+        return ""
+
+    journal_name_dict = load_journal_name_dict()
+    if not journal_name_dict:
+        raise ValueError("journal_name_dict is required to get conference name.")
+
+    # まず辞書で探す
+    if long_booktitle in journal_name_dict:
+        return journal_name_dict[long_booktitle]
+
+    words = long_booktitle.split()
+    booktitle_words = []
+    if words and words[0].lower() == "proceedings" and len(words) > 4:
+        # Proceedings of the Nst を除いた会議名の部分を使う
+        booktitle_words = words[4:]
+
+    conf = " ".join(booktitle_words)
+    # 会議名でも辞書を引く
+    if conf in journal_name_dict:
+        return journal_name_dict[conf]
+
+    # イニシャルで短縮形を作成
+    initials = ''.join(word[0] for word in booktitle_words if word and word[0].isupper())
+    return initials
 
 def build_short_journal(long_journal: str) -> str:
     """括弧内の略称から短縮形ジャーナル名を生成する。"""
