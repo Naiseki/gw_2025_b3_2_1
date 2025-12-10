@@ -51,7 +51,7 @@ def handle_message(event, say, client):
     # raw_bibを構築
     raw_bib = at_and_after.strip()
     if not raw_bib:
-        say("有効なBibTeXエントリが見つかりませんでした。")
+        say("有効なBibTeXエントリが見つかりませんでした...")
         return
 
     new_key = "KEY"
