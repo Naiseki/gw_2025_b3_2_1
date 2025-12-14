@@ -2,6 +2,7 @@
 
 import re
 from abc import ABC, abstractmethod
+from typing import Callable
 from titlecase import titlecase
 from load_resource import load_journal_name_dict
 
@@ -41,11 +42,11 @@ def extract_field(raw_bib: str, field: str) -> str:
     return ""
 
 
-def build_short_booktitle(long_booktitle: str) -> str:
-    conf = _get_short_conference_name(long_booktitle)
+def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
+    conf = _get_short_conference_name(long_booktitle, warning_callback)
     return f"Proc. of {conf}" if conf else "Proceedings"
 
-def _get_short_conference_name(long_booktitle: str) -> str:
+def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
     if not long_booktitle:
         return ""
 
@@ -53,7 +54,7 @@ def _get_short_conference_name(long_booktitle: str) -> str:
     if not journal_name_dict:
         raise ValueError("論文誌名辞書の読み込みに失敗しました。")
 
-    # まず辞書で探す
+    # 1. まず辞書で探す
     if long_booktitle in journal_name_dict:
         return journal_name_dict[long_booktitle]
 
@@ -64,9 +65,12 @@ def _get_short_conference_name(long_booktitle: str) -> str:
         booktitle_words = words[4:]
 
     conf = " ".join(booktitle_words)
-    # 会議名でも辞書を引く
+    # 2. 会議名でも辞書を引く
     if conf in journal_name_dict:
         return journal_name_dict[conf]
+
+    if warning_callback:
+        warning_callback("*! ! ! 会議名が辞書に見つからなかったため、イニシャルで短縮形を作成します。*\n*これは大いに間違っている可能性があります。*")
 
     # イニシャルで短縮形を作成
     initials = ''.join(word[0] for word in booktitle_words if word and word[0].isupper())

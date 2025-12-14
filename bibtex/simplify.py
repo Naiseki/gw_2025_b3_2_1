@@ -7,11 +7,12 @@ from .jnlp_parser import JNLPParser
 from .article_parser import ArticleParser
 from .inproceedings_parser import InproceedingsParser
 import re
+from typing import Callable
 
 
 class GenericParser(BaseParser):
     """ACL でも arXiv でもなさそうなもの用のゆるいフォールバック。"""
-    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
+    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
         title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
         author = extract_field(raw_bib, "author")
         journal = extract_field(raw_bib, "journal")
@@ -68,8 +69,8 @@ def _extract_entry_key(raw_bib: str) -> str:
     return m.group(1)
 
 
-def simplify_bibtex_entry(raw_bib: str, new_key: str | None = None, booktitle_mode: str = "both") -> str:
+def simplify_bibtex_entry(raw_bib: str, new_key: str | None = None, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
     source = detect_source(raw_bib)
     parser = _PARSERS.get(source, _PARSERS["generic"])
     key = new_key or _extract_entry_key(raw_bib)
-    return parser.parse(raw_bib, key, booktitle_mode=booktitle_mode)
+    return parser.parse(raw_bib, key, booktitle_mode=booktitle_mode, warning_callback=warning_callback)

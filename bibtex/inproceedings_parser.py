@@ -1,10 +1,11 @@
 # bibtex/acl_parser.py
 
 import re
+from typing import Callable
 from .utils import BaseParser, extract_field, normalize_title, build_short_booktitle, format_authors
 
 class InproceedingsParser(BaseParser):
-    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
+    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
         self.check_required_fields(raw_bib, ["title", "author", "booktitle", "pages", "year", "url"])
 
         title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
@@ -12,7 +13,7 @@ class InproceedingsParser(BaseParser):
 
         long_booktitle = extract_field(raw_bib, "booktitle")
         long_booktitle_clean = re.sub(r"\s*\([^)]*\)\s*$", "", long_booktitle).strip()
-        short_booktitle = build_short_booktitle(long_booktitle)
+        short_booktitle = build_short_booktitle(long_booktitle, warning_callback)
 
         year = extract_field(raw_bib, "year")
         pages = extract_field(raw_bib, "pages")

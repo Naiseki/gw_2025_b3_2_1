@@ -1,5 +1,6 @@
 # bibtex/arxiv_parser.py
 
+from typing import Callable
 from .utils import (
     BaseParser,
     extract_field,
@@ -8,7 +9,7 @@ from .utils import (
 )
 
 class JNLPParser(BaseParser):
-    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
+    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
         title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
         author = extract_field(raw_bib, "author")
         journal = extract_field(raw_bib, "journal")

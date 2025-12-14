@@ -1,9 +1,10 @@
 # bibtex/arxiv_parser.py
 
+from typing import Callable
 from .utils import BaseParser, extract_field, normalize_title, format_authors, build_short_journal
 
 class ArticleParser(BaseParser):
-    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
+    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
         self.check_required_fields(raw_bib, ["title", "author", "journal", "volume", "number", "pages", "year", "url"])
         title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
         author = extract_field(raw_bib, "author")
