@@ -5,34 +5,25 @@ from .utils import BaseParser, extract_field, normalize_title, format_authors, b
 
 class ArticleParser(BaseParser):
     def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
-        self.check_required_fields(raw_bib, ["title", "author", "journal", "volume", "number", "pages", "year", "url"])
-        title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
-        author = extract_field(raw_bib, "author")
-        long_journal = extract_field(raw_bib, "journal")
+        required_fields: list[str] = ["title", "author", "journal", "volume", "number", "pages", "year", "url"]
+        self.check_required_fields(raw_bib, required_fields)
+        fields = self.get_fields(raw_bib, required_fields)
+        title = normalize_title(fields["title"])
+        author = format_authors(fields["author"])
+        long_journal = fields["journal"]
         short_journal = build_short_journal(long_journal)
-        volume = extract_field(raw_bib, "volume")
-        number = extract_field(raw_bib, "number")
-        pages = extract_field(raw_bib, "pages")
-        year = extract_field(raw_bib, "year")
-        url = (extract_field(raw_bib, "url") or "").strip("<>").rstrip("/")
+        url = (fields["url"] or "").strip("<>").rstrip("/")
+
 
         lines = [f"@article{{{new_key},"]
         lines.append(f"    title = {{{{{title}}}}},")
-        if author:
-            lines.append(f'    author = "{format_authors(author)}",')
-        if long_journal:
-            lines.append(f'    journal = "{long_journal}",')
-        if short_journal:
-            lines.append(f'    journal = "{short_journal}",')
-        if volume:
-            lines.append(f'    volume = "{volume}",')
-        if number:
-            lines.append(f'    number = "{number}",')
-        if pages:
-            lines.append(f'    pages = "{pages}",')
-        if year:
-            lines.append(f'    year = "{year}",')
-        if url:
-            lines.append(f'    url = "{url}",')
+        lines.append(f'    author = "{author}",')
+        lines.append(f'    journal = "{long_journal}",')
+        lines.append(f'    journal = "{short_journal}",')
+        lines.append(f'    volume = "{fields["volume"]}",')
+        lines.append(f'    number = "{fields["number"]}",')
+        lines.append(f'    pages = "{fields["pages"]}",')
+        lines.append(f'    year = "{fields["year"]}",')
+        lines.append(f'    url = "{url}",')
         lines.append("}")
         return "\n".join(lines)

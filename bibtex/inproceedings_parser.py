@@ -6,18 +6,21 @@ from .utils import BaseParser, extract_field, normalize_title, build_short_bookt
 
 class InproceedingsParser(BaseParser):
     def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
-        self.check_required_fields(raw_bib, ["title", "author", "booktitle", "pages", "year", "url"])
+        required_fields: list[str] = ["title", "author", "booktitle", "pages", "year", "url"]
+        self.check_required_fields(raw_bib, required_fields)
+        fields = self.get_fields(raw_bib, required_fields)
 
-        title = normalize_title(extract_field(raw_bib, "title") or "Unknown Title")
-        author = extract_field(raw_bib, "author")
 
-        long_booktitle = extract_field(raw_bib, "booktitle")
+        title = normalize_title(fields["title"])
+        author = fields["author"]
+
+        long_booktitle = fields["booktitle"]
         long_booktitle_clean = re.sub(r"\s*\([^)]*\)\s*$", "", long_booktitle).strip()
         short_booktitle = build_short_booktitle(long_booktitle, warning_callback)
 
-        year = extract_field(raw_bib, "year")
-        pages = extract_field(raw_bib, "pages")
-        url = (extract_field(raw_bib, "url") or "").strip("<>").rstrip("/")
+        year = fields["year"]
+        pages = fields["pages"]
+        url = (fields["url"] or "").strip("<>").rstrip("/")
 
 
         lines = [f"@inproceedings{{{new_key},"]

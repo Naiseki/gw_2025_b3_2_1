@@ -122,3 +122,13 @@ class BaseParser(ABC):
         missing_fields = find_missing_fields(raw_bib, required_fields)
         if missing_fields:
             raise ValueError(f"必要なフィールドがありません: {', '.join(missing_fields)}")
+
+    def get_fields(self, raw_bib: str, fields: list[str]) -> dict[str, str]:
+        result = {}
+        for field in fields:
+            data = extract_field(raw_bib, field)
+            if data:
+                result[field] = data
+            else:
+                raise ValueError(f"フィールド '{field}' の値が見つかりません。")
+        return result
