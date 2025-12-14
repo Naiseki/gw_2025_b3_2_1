@@ -70,25 +70,29 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
         return journal_name_dict[conf]
 
     if warning_callback:
-        warning_callback("*! ! ! 会議名が辞書に見つからなかったため、イニシャルで短縮形を作成します。*\n*これは大いに間違っている可能性があります。*")
+        warning_callback("*! ! ! 会議名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは大いに間違っている可能性があります。*")
 
     # イニシャルで短縮形を作成
     initials = ''.join(word[0] for word in booktitle_words if word and word[0].isupper())
     return initials
 
-def build_short_journal(long_journal: str) -> str:
-    """括弧内の略称から短縮形ジャーナル名を生成する。"""
-    short_journal = long_journal
-    match = re.search(r'\((?:\{)?([A-Za-z][A-Za-z0-9\s\-/]+)', long_journal)
-    if match:
-        parts = re.split(r'[-/\s]+', match.group(1))
-        parts = [p.upper() for p in parts if p and not p.isdigit()]
-        if parts:
-            if len(parts) > 1:
-                parts = sorted(parts)
-            short_journal = '-'.join(parts)
-    return short_journal
+def build_short_journal(long_journal: str, warning_callback: Callable[[str], None] | None = None) -> str:
+    if not long_journal:
+        return ""
+    journal_name_dict = load_journal_name_dict()
+    if not journal_name_dict:
+        raise ValueError("論文誌名辞書の読み込みに失敗しました。")
 
+    # 1. まず辞書で探す
+    if long_journal in journal_name_dict:
+        return journal_name_dict[long_journal]
+
+    if warning_callback:
+        warning_callback("*! ! ! ジャーナル名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは大いに間違っている可能性があります。*")
+    """括弧内の略称から省略形ジャーナル名を生成する。"""
+    words = long_journal.split()
+    initials = "".join(word[0] for word in words if word and word[0].isupper())
+    return initials
 
 def format_authors(raw_author: str, line_break_after_and: bool = False) -> str:
     """著者数が threshold 以上なら先頭のみ、それ未満なら全員を返す。"""

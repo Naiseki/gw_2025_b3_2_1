@@ -11,15 +11,22 @@ class ArticleParser(BaseParser):
         title = normalize_title(fields["title"])
         author = format_authors(fields["author"])
         long_journal = fields["journal"]
-        short_journal = build_short_journal(long_journal)
+        short_journal = build_short_journal(long_journal, warning_callback)
         url = (fields["url"] or "").strip("<>").rstrip("/")
 
 
         lines = [f"@article{{{new_key},"]
         lines.append(f"    title = {{{{{title}}}}},")
         lines.append(f'    author = "{author}",')
-        lines.append(f'    journal = "{long_journal}",')
-        lines.append(f'    journal = "{short_journal}",')
+        if booktitle_mode == "short" and short_journal:
+            lines.append(f'    journal = "{short_journal}",')
+        elif booktitle_mode == "long" and long_journal:
+            lines.append(f'    journal = "{long_journal}",')
+        else:  # both
+            if short_journal:
+                lines.append(f'    journal = "{short_journal}",')
+            if long_journal:
+                lines.append(f'    journal = "{long_journal}",')
         lines.append(f'    volume = "{fields["volume"]}",')
         lines.append(f'    number = "{fields["number"]}",')
         lines.append(f'    pages = "{fields["pages"]}",')

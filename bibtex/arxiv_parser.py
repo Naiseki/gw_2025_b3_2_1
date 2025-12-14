@@ -8,7 +8,7 @@ class ArxivParser(BaseParser):
         required_fields: list[str] = ["title", "author", "year", "eprint", "url"]
         self.check_required_fields(raw_bib, required_fields)
         fields = self.get_fields(raw_bib, required_fields)
-        title = normalize_title(fields["title"] or "Unknown Title")
+        title = normalize_title(fields["title"])
         author = format_authors(fields["author"])
         eprint = fields["eprint"]  # arXiv ID が入ることが多い
         volume = fields.get("volume")
@@ -17,14 +17,16 @@ class ArxivParser(BaseParser):
         year = fields.get("year")
         url = (fields.get("url") or "").strip("<>").rstrip("/")
 
-        lines = [f"@article{{{new_key},"]
-        lines.append(f"    title = {{{{{title}}}}},")
-        lines.append(f'    author = "{author}",')
-        lines.append(f'    journal = "arXiv:{eprint}",')
-        lines.append(f'    volume = "{volume}",')
-        lines.append(f'    number = "{number}",')
-        lines.append(f'    pages = "{pages}",')
-        lines.append(f'    year = "{year}",')
-        lines.append(f'    url = "{url}",')
-        lines.append("}")
+        lines = [
+            f"@article{{{new_key},",
+            f"    title = {{{{{title}}}}},",
+        	f'    author = "{author}",',
+        	f'    journal = "arXiv:{eprint}",',
+        	f'    volume = "{volume}",',
+        	f'    number = "{number}",',
+        	f'    pages = "{pages}",',
+        	f'    year = "{year}",',
+        	f'    url = "{url}",',
+        	"}"
+        ]
         return "\n".join(lines)
