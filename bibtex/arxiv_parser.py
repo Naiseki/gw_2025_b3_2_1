@@ -13,7 +13,7 @@ class ArxivParser(BaseParser):
         number = extract_field(raw_bib, "number")
         pages = extract_field(raw_bib, "pages")
         year = extract_field(raw_bib, "year")
-        url = extract_field(raw_bib, "url")
+        url = (extract_field(raw_bib, "url") or "").strip("<>").rstrip("/")
 
         lines = [f"@article{{{new_key},"]
         lines.append(f"    title = {{{{{title}}}}},")
