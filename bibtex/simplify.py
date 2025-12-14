@@ -6,6 +6,7 @@ from .arxiv_parser import ArxivParser
 from .jnlp_parser import JNLPParser
 from .article_parser import ArticleParser
 from .inproceedings_parser import InproceedingsParser
+import re
 
 
 class GenericParser(BaseParser):
@@ -60,14 +61,15 @@ _PARSERS: dict[str, BaseParser] = {
 }
 
 
-def simplify_bibtex_entry(raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
-    """外から呼ぶのは基本これだけ。Slack からもこれを叩く。
-    
-    Args:
-        raw_bib: 整形前のBibTeX文字列
-        new_key: 新しい引用キー
-        booktitle_mode: "short"（短縮形）, "long"（正式名称）, "both"（両方）
-    """
+def _extract_entry_key(raw_bib: str) -> str:
+    m = re.search(r"@\w+\s*{\s*([^,\s]+)", raw_bib)
+    if not m:
+        raise ValueError("BibTeXエントリのキーが見つかりません。")
+    return m.group(1)
+
+
+def simplify_bibtex_entry(raw_bib: str, new_key: str | None = None, booktitle_mode: str = "both") -> str:
     source = detect_source(raw_bib)
     parser = _PARSERS.get(source, _PARSERS["generic"])
-    return parser.parse(raw_bib, new_key, booktitle_mode=booktitle_mode)
+    key = new_key or _extract_entry_key(raw_bib)
+    return parser.parse(raw_bib, key, booktitle_mode=booktitle_mode)

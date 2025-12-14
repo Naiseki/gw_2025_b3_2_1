@@ -19,7 +19,7 @@ class ACLParser(BaseParser):
         url = (extract_field(raw_bib, "url") or "").strip("<>").rstrip("/")
 
 
-        lines = ["@inproceedings{KEY,"]
+        lines = [f"@inproceedings{{{new_key},"]
         if title:
             lines.append(f"    title = {{{{{title}}}}},")
         if author:

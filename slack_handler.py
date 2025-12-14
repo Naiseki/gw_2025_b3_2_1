@@ -55,8 +55,7 @@ def handle_message(event, say, client):
         return
 
     try:
-        new_key = "KEY"
-        simplified = simplify_bibtex_entry(raw_bib, new_key, booktitle_mode=booktitle_mode)
+        simplified = simplify_bibtex_entry(raw_bib, booktitle_mode=booktitle_mode)
         say(f"```{simplified}```")
     except ValueError as e:
         say(f"{e.__class__.__name__} {str(e)}")
