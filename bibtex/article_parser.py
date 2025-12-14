@@ -18,20 +18,20 @@ class ArticleParser(BaseParser):
         lines = [f"@article{{{new_key},"]
         lines.append(f"    title = {{{{{title}}}}},")
         if author:
-            lines.append(f"    author = {{{format_authors(author)}}},")
+            lines.append(f'    author = "{format_authors(author)}",')
         if long_journal:
-            lines.append(f"    journal = {{{long_journal}}},")
+            lines.append(f'    journal = "{long_journal}",')
         if short_journal:
-            lines.append(f"    journal = {{{short_journal}}},")
+            lines.append(f'    journal = "{short_journal}",')
         if volume:
-            lines.append(f"    volume = {{{volume}}},")
+            lines.append(f'    volume = "{volume}",')
         if number:
-            lines.append(f"    number = {{{number}}},")
+            lines.append(f'    number = "{number}",')
         if pages:
-            lines.append(f"    pages = {{{pages}}},")
+            lines.append(f'    pages = "{pages}",')
         if year:
-            lines.append(f"    year = {{{year}}},")
+            lines.append(f'    year = "{year}",')
         if url:
-            lines.append(f"    url = {{{url}}},")
+            lines.append(f'    url = "{url}",')
         lines.append("}")
         return "\n".join(lines)

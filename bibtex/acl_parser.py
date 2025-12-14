@@ -23,23 +23,23 @@ class ACLParser(BaseParser):
         if title:
             lines.append(f"    title = {{{{{title}}}}},")
         if author:
-            lines.append(f"    author = \"{format_authors(author, line_break_after_and=True)}\",")
+            lines.append(f'    author = "{format_authors(author, line_break_after_and=True)}",')
 
         # booktitle_modeに応じて出力を切り替え
-        if booktitle_mode == "short" and short_booktitle:
-            lines.append(f"    booktitle = \"{short_booktitle}\",")
+        if booktitle_mode == 'short' and short_booktitle:
+            lines.append(f'    booktitle = "{short_booktitle}",')
         elif booktitle_mode == "long" and long_booktitle_clean:
-            lines.append(f"    booktitle = \"{long_booktitle_clean}\",")
+            lines.append(f'    booktitle = "{long_booktitle_clean}",')
         else:  # both
             if short_booktitle:
-                lines.append(f"    booktitle = \"{short_booktitle}\",")
+                lines.append(f'    booktitle = "{short_booktitle}",')
             if long_booktitle_clean:
-                lines.append(f"    booktitle = \"{long_booktitle_clean}\",")
+                lines.append(f'    booktitle = "{long_booktitle_clean}",')
         if year:
-            lines.append(f"    year = \"{year}\",")
+            lines.append(f'    year = "{year}",')
         if pages:
-            lines.append(f"    pages = \"{pages}\",")
+            lines.append(f'    pages = "{pages}",')
         if url:
-            lines.append(f"    url = \"{url}\",")
+            lines.append(f'    url = "{url}",')
         lines.append("}")
         return "\n".join(lines)

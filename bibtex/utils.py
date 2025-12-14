@@ -27,7 +27,7 @@ def normalize_title(raw_title: str) -> str:
             return word.lower()
         return word
 
-    return titlecase(raw_title, callback=small_word_callback)
+    return titlecase(raw_title)
 
 
 def extract_field(raw_bib: str, field: str) -> str:
@@ -86,14 +86,14 @@ def build_short_journal(long_journal: str) -> str:
     return short_journal
 
 
-def format_authors(raw_author: str, threshold: int = 10, line_break_after_and: bool = False) -> str:
+def format_authors(raw_author: str, line_break_after_and: bool = False) -> str:
     """著者数が threshold 以上なら先頭のみ、それ未満なら全員を返す。"""
     authors = [a.strip() for a in re.split(r"\s+and\s+", raw_author) if a.strip()]
     if not authors:
         return ""
-    if len(authors) >= threshold:
-        return authors[0]
-    return " and\n      ".join(authors) if line_break_after_and else " and ".join(authors)
+    if line_break_after_and:
+        return " and\n      ".join(authors)
+    return " and ".join(authors)
 
 def find_missing_fields(raw_bib: str, fields: list[str]) -> list[str]:
     """指定されたフィールドがすべて存在するかを確認する。"""
