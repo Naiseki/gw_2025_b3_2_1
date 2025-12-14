@@ -1,9 +1,7 @@
 # bibtex/simplify.py
 
 from .utils import extract_field, normalize_title, BaseParser
-from .acl_parser import ACLParser
 from .arxiv_parser import ArxivParser
-from .jnlp_parser import JNLPParser
 from .article_parser import ArticleParser
 from .inproceedings_parser import InproceedingsParser
 import re
