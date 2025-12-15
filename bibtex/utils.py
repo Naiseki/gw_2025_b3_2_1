@@ -42,6 +42,8 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
     if not journal_name_dict:
         raise ValueError("論文誌名辞書の読み込みに失敗しました。")
 
+    long_booktitle = long_booktitle.replace(",", "").replace(".", "").strip()
+
     # 1. まず辞書で探す
     if long_booktitle in journal_name_dict:
         return journal_name_dict[long_booktitle]
@@ -58,10 +60,10 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
         return journal_name_dict[conf]
 
     if warning_callback:
-        warning_callback("*! ! ! 会議名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは大いに間違っている可能性があります。*")
+        warning_callback("*! ! ! 会議名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは間違っている可能性が大いにあります。*")
 
     # イニシャルで短縮形を作成
-    initials = ''.join(word[0] for word in booktitle_words if word and word[0].isupper())
+    initials = "".join(word[0] for word in booktitle_words if word and word[0].isupper())
     return initials
 
 
@@ -72,12 +74,14 @@ def build_short_journal(long_journal: str, warning_callback: Callable[[str], Non
     if not journal_name_dict:
         raise ValueError("論文誌名辞書の読み込みに失敗しました。")
 
+    long_journal = long_journal.replace(",", "").replace(".", "").strip()
+
     # 1. まず辞書で探す
     if long_journal in journal_name_dict:
         return journal_name_dict[long_journal]
 
     if warning_callback:
-        warning_callback("*! ! ! ジャーナル名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは大いに間違っている可能性があります。*")
+        warning_callback("*! ! ! ジャーナル名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは間違っている可能性が大いにあります。*")
     """括弧内の略称から省略形ジャーナル名を生成する。"""
     words = long_journal.split()
     initials = "".join(word[0] for word in words if word and word[0].isupper())
