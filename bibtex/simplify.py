@@ -10,13 +10,13 @@ from typing import Callable
 
 def detect_source(raw_bib: str) -> str:
     """ ソース判定 """
+    if "arXiv" in raw_bib:
+        return "arxiv"
     t = raw_bib.lower()
     if "@inproceedings" in t:
         return "inproceedings"
     if "@article" in t:
         return "article"
-    if "arXiv" in raw_bib:
-        return "arxiv"
     raise ValueError("対応していないBibTeXエントリです🙇‍♂️")
 
 _PARSERS: dict[str, BaseParser] = {
