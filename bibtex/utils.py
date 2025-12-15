@@ -6,11 +6,6 @@ from typing import Callable
 from titlecase import titlecase
 from load_resource import load_journal_name_dict
 
-SMALL_WORDS = {
-    "a", "an", "and", "as", "at", "but", "by", "en", "for",
-    "if", "in", "of", "on", "or", "the", "to", "v", "vs", "via", "with",
-}
-
 def strip_all_braces(text: str) -> str:
     while re.search(r'{[^{}]*}', text):
         text = re.sub(r'{([^{}]*)}', r'\1', text)
@@ -20,14 +15,6 @@ def strip_all_braces(text: str) -> str:
 def normalize_title(raw_title: str) -> str:
     """BibTeX の {A} 指定を外しつつ titlecase を適用する。"""
     raw_title = strip_all_braces(raw_title)
-
-    def small_word_callback(word, **kwargs):
-        index = kwargs.get("index", 0)
-        words = kwargs.get("words", [])
-        if 0 < index < len(words) - 1 and word.lower() in SMALL_WORDS:
-            return word.lower()
-        return word
-
     return titlecase(raw_title)
 
 
@@ -45,6 +32,7 @@ def extract_field(raw_bib: str, field: str) -> str:
 def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
     conf = _get_short_conference_name(long_booktitle, warning_callback)
     return f"Proc. of {conf}" if conf else "Proceedings"
+
 
 def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
     if not long_booktitle:
@@ -76,6 +64,7 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
     initials = ''.join(word[0] for word in booktitle_words if word and word[0].isupper())
     return initials
 
+
 def build_short_journal(long_journal: str, warning_callback: Callable[[str], None] | None = None) -> str:
     if not long_journal:
         return ""
@@ -94,6 +83,7 @@ def build_short_journal(long_journal: str, warning_callback: Callable[[str], Non
     initials = "".join(word[0] for word in words if word and word[0].isupper())
     return initials
 
+
 def format_authors(raw_author: str, line_break_after_and: bool = False) -> str:
     """著者数が threshold 以上なら先頭のみ、それ未満なら全員を返す。"""
     authors = [a.strip() for a in re.split(r"\s+and\s+", raw_author) if a.strip()]
@@ -102,6 +92,7 @@ def format_authors(raw_author: str, line_break_after_and: bool = False) -> str:
     if line_break_after_and:
         return " and\n      ".join(authors)
     return " and ".join(authors)
+
 
 def find_missing_fields(raw_bib: str, fields: list[str]) -> list[str]:
     """指定されたフィールドがすべて存在するかを確認する。"""
