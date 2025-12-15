@@ -16,7 +16,7 @@ class InproceedingsParser(BaseParser):
 
         long_booktitle = fields["booktitle"]
         long_booktitle_clean = re.sub(r"\s*\([^)]*\)\s*$", "", long_booktitle).strip()
-        short_booktitle = build_short_booktitle(long_booktitle, warning_callback)
+        short_booktitle = build_short_booktitle(long_booktitle_clean, warning_callback)
 
         year = fields["year"]
         pages = fields["pages"]
