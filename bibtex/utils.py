@@ -51,13 +51,17 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
     words = long_booktitle.split()
     booktitle_words = []
     if words and words[0].lower() == "proceedings" and len(words) > 4:
-        # Proceedings of the Nst を除いた会議名の部分を使う
+        # Proceedings of the (20xx/Nst) を除いた会議名の部分を使う
         booktitle_words = words[4:]
 
     conf = " ".join(booktitle_words)
     # 2. 会議名でも辞書を引く
     if conf in journal_name_dict:
         return journal_name_dict[conf]
+    else:
+        conf = " ".join(words[3:])  # Proceedings of the を除いた部分全体を使う
+        if conf in journal_name_dict:
+            return journal_name_dict[conf]
 
     if warning_callback:
         warning_callback("*! ! ! 会議名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは間違っている可能性が大いにあります。*")
