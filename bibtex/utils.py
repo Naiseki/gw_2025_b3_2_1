@@ -61,17 +61,20 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
     # Proceedings ... of 20xx などの前置きを削除
     long_booktitle = re.sub(pattern, '', long_booktitle, flags=re.IGNORECASE | re.VERBOSE)
 
-
-    # 1. まず辞書で探す
-    if long_booktitle in journal_name_dict:
-        return journal_name_dict[long_booktitle]
+    # 1. 辞書で探す（部分一致も試みる）
+    words = long_booktitle.split()
+    challenge = 4
+    for i in range(min(challenge, len(words))):
+        key = " ".join(words[i:])
+        value = journal_name_dict.get(key)
+        if value is not None:
+            return value
 
     if warning_callback:
         warning_callback("*! ! ! 会議名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは間違っている可能性が大いにあります。*")
 
     # 2. イニシャルで短縮形を作成
-    booktitle_words = long_booktitle.split()
-    initials = "".join(word[0] for word in booktitle_words if word and word[0].isupper())
+    initials = "".join(word[0] for word in words if word and word[0].isupper())
     return initials
 
 
