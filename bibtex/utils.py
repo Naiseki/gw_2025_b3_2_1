@@ -127,12 +127,25 @@ class BaseParser(ABC):
         if missing_fields:
             raise ValueError(f"必要なフィールドがありません: {', '.join(missing_fields)}")
 
-    def get_fields(self, raw_bib: str, fields: list[str]) -> dict[str, str]:
+    def get_fields(self, raw_bib: str, fields: list[tuple[str, bool]]) -> dict[str, str]:
+        """ 
+        fields で指定されたフィールドを抽出する。必須フィールドが欠けている場合は例外を投げる。
+        Args:
+            raw_bib: BibTeX エントリの文字列
+            fields: (フィールド名, 必須かどうか) のタプルのリスト
+        Returns:
+            フィールド名をキー、抽出した値を値とする辞書
+        """
         result = {}
-        for field in fields:
+        missing_fields = []
+        for field, required in fields:
             data = extract_field(raw_bib, field)
             if data:
                 result[field] = data
-            else:
-                raise ValueError(f"フィールド '{field}' の値が見つかりません。")
+            elif required:
+                missing_fields.append(field)
+
+        if missing_fields:
+            raise ValueError(f"必要なフィールドの値がありません: {', '.join(missing_fields)}")
+
         return result
