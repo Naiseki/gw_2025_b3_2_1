@@ -70,6 +70,7 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
         warning_callback("*! ! ! 会議名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは間違っている可能性が大いにあります。*")
 
     # 2. イニシャルで短縮形を作成
+    booktitle_words = long_booktitle.split()
     initials = "".join(word[0] for word in booktitle_words if word and word[0].isupper())
     return initials
 
