@@ -66,25 +66,10 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
     if long_booktitle in journal_name_dict:
         return journal_name_dict[long_booktitle]
 
-    words = long_booktitle.split()
-    booktitle_words = []
-    if words and words[0].lower() == "proceedings" and len(words) > 4:
-        # Proceedings of the (20xx/Nst) を除いた会議名の部分を使う
-        booktitle_words = words[4:]
-
-    conf = " ".join(booktitle_words)
-    # 2. 会議名でも辞書を引く
-    if conf in journal_name_dict:
-        return journal_name_dict[conf]
-    else:
-        conf = " ".join(words[3:])  # Proceedings of the を除いた部分全体を使う
-        if conf in journal_name_dict:
-            return journal_name_dict[conf]
-
     if warning_callback:
         warning_callback("*! ! ! 会議名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは間違っている可能性が大いにあります。*")
 
-    # イニシャルで短縮形を作成
+    # 2. イニシャルで短縮形を作成
     initials = "".join(word[0] for word in booktitle_words if word and word[0].isupper())
     return initials
 
@@ -96,9 +81,16 @@ def build_short_journal(long_journal: str, warning_callback: Callable[[str], Non
     if not journal_name_dict:
         raise ValueError("論文誌名辞書の読み込みに失敗しました。")
 
-    long_journal = long_journal.replace(",", "").replace(".", "").strip()
+    long_journal = long_journal.translate(str.maketrans("", "", ",.")).strip()
+    # Vol.XX などの部分を削除
+    long_journal = re.sub(
+        r'\s+(?:Vol(?:ume)?|No|Issue)\.?\s*\d+|\s*\(\d{4}\)',
+        '',
+        long_journal,
+        flags=re.IGNORECASE
+    ).strip()
 
-    # 1. まず辞書で探す
+    # まず辞書で探す
     if long_journal in journal_name_dict:
         return journal_name_dict[long_journal]
 
