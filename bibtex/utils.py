@@ -19,11 +19,12 @@ def normalize_title(raw_title: str) -> str:
 
 
 def extract_field(raw_bib: str, field: str) -> str:
-    """field をダブルクオート・波括弧双方から抽出する。"""
-    p1 = rf'{field}\s*=\s*"([^"]+)"'
-    p2 = rf'{field}\s*=\s*{{([^}}]+)}}'
+    """field をダブルクオート・波括弧双方から抽出する（大文字小文字を無視）。"""
+    field_esc = re.escape(field)
+    p1 = rf'\b{field_esc}\s*=\s*"([^"]+)"'
+    p2 = rf'\b{field_esc}\s*=\s*{{([^}}]+)}}'
     for p in (p1, p2):
-        m = re.search(p, raw_bib, re.DOTALL)
+        m = re.search(p, raw_bib, re.DOTALL | re.IGNORECASE)
         if m:
             return m.group(1).strip()
     return ""
