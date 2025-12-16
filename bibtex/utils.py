@@ -32,7 +32,7 @@ def extract_field(raw_bib: str, field: str) -> str:
 
 def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
     conf = _get_short_conference_name(long_booktitle, warning_callback)
-    return f"Proc. of {conf}" if conf else "Proceedings"
+    return f"Proc. of {conf}" if conf else ""
 
 
 def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
