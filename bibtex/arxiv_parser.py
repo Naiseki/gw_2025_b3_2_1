@@ -5,28 +5,27 @@ from .utils import BaseParser, extract_field, normalize_title, format_authors
 
 class ArxivParser(BaseParser):
     def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
-        required_fields: list[str] = ["title", "author", "year", "eprint", "url"]
-        self.check_required_fields(raw_bib, required_fields)
-        fields = self.get_fields(raw_bib, required_fields)
-        title = normalize_title(fields["title"])
-        author = format_authors(fields["author"])
-        eprint = fields["eprint"]  # arXiv ID が入ることが多い
-        volume = fields.get("volume")
-        number = fields.get("number")
-        pages = fields.get("pages")
-        year = fields.get("year")
-        url = (fields.get("url") or "").strip("<>").rstrip("/")
-
-        lines = [
-            f"@article{{{new_key},",
-            f"    title = {{{{{title}}}}},",
-        	f'    author = "{author}",',
-        	f'    journal = "arXiv:{eprint}",',
-        	f'    volume = "{volume}",',
-        	f'    number = "{number}",',
-        	f'    pages = "{pages}",',
-        	f'    year = "{year}",',
-        	f'    url = "{url}",',
-        	"}"
+        field_names = [
+            ("title", True), 
+            ("author", True), 
+            ("eprint", True), 
+            ("year", False),
+            ("url", False), 
         ]
+        fields = self.get_fields(raw_bib, field_names)
+        title = normalize_title(fields.get("title", ""))
+        author = format_authors(fields.get("author", ""))
+        url = (fields.get("url", "") or "").strip("<>").rstrip("/")
+
+        lines = [f"@article{{{new_key},"]
+        lines.append(f"    title = {{{{{title}}}}},")
+        lines.append(f'    author = "{author}",')
+        if "eprint" in fields:
+            lines.append(f'    journal = "arXiv:{fields["eprint"]}",')
+        if "year" in fields:
+            lines.append(f'    year = "{fields.get("year")}",')
+        if url:
+            lines.append(f'    url = "{url}",')
+        lines.append("}")
+        
         return "\n".join(lines)
