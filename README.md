@@ -25,6 +25,27 @@ uv run app.py
 ```
 
 ## 使い方
+ACLやarXivなどのサイトからBibTexをコピペして送信します。
 - DM: BibTeX本文をそのまま送信
 - チャンネル: `@<ボット名> <BibTeX本文>`
 - レスポンスは整形済みBibTeXが返されます。
+### オプション
+BibTeXの前にオプションをつけることで，論文誌/国際会議の出力を制御できます。
+- `-s (--short)`: 省略形のみ出力
+- `-l (--long)`: 原形のみ出力
+- `オプション無し`: 原形，省略形ともに出力
+
+例:
+```bash
+-s @inproceedings{...,
+    title = "...",
+    author = "...",
+    editor = "...",
+    booktitle = "...",
+    year = "2020",
+    publisher = "...",
+    url = "https://...",
+    pages = "100--110",
+    abstract = "..."
+}
+```
