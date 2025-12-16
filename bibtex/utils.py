@@ -43,7 +43,24 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
     if not journal_name_dict:
         raise ValueError("論文誌名辞書の読み込みに失敗しました。")
 
-    long_booktitle = long_booktitle.replace(",", "").replace(".", "").strip()
+    long_booktitle = long_booktitle.translate(str.maketrans("", "", ",.")).strip()
+
+    pattern = r'''
+    ^
+    (?:In\s+)?                      # optional "In "
+    (?:Proceedings|Proc\.)          # Proceedings / Proc.
+    \s+of\s+                        # " of "
+    (?:the\s+)?                     # optional "the "
+    (?:                             
+        \d{4}                        # year
+    | \d+(?:st|nd|rd|th)           # ordinal
+    )?
+    \s*
+    '''
+
+    # Proceedings ... of 20xx などの前置きを削除
+    long_booktitle = re.sub(pattern, '', long_booktitle, flags=re.IGNORECASE | re.VERBOSE)
+
 
     # 1. まず辞書で探す
     if long_booktitle in journal_name_dict:
