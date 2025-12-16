@@ -128,6 +128,7 @@
     "Applied Natural Language Processing Conference": "ANLP",
     "Findings of the Association for Computational Linguistics": "Findings",
     "Lexical and Computational Semantics and Semantic Evaluation": "SemEval",
+    "International Workshop on Semantic Evaluation": "SemEval",
     "Artificial Intelligence in Measurement and Education Conference": "AIME-Con",
     "Conference of the Association for Machine Translation in the Americas": "AMTA",
     "Chinese National Conference on Computational Linguistics": "CCL",
@@ -148,5 +149,9 @@
     "Theoretical Issues In Natural Language Processing": "TINLAP",
     "NIST's TIPSTER Text Program": "TIPSTER",
     "Workshop on Text Simplification Accessibility and Readability": "TSAR",
-    "Text Simplification Accessibility and Readability": "TSAR"
+    "Text Simplification Accessibility and Readability": "TSAR",
+    "Workshop on Speech and Language Technology in Education": "SLaTE",
+    "Conference on Language Modeling": "CoLM",
+    "Oriental Chapter of the International Committee for the Co-ordination and Standardization of Speech Databases and Assessment Techniques": "COCOSDA",
+    "International Committee for the Co-ordination and Standardization of Speech Databases and Assessment Techniques": "COCOSDA"
 }
