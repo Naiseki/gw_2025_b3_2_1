@@ -70,10 +70,14 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
         if value is not None:
             return value
 
+    # 2. 単語が1つだけならそれを返す
+    if len(words) == 1:
+        return long_booktitle
+
     if warning_callback:
         warning_callback("*! ! ! 会議名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは間違っている可能性が大いにあります。*")
 
-    # 2. イニシャルで短縮形を作成
+    # 3. イニシャルで短縮形を作成
     initials = "".join(word[0] for word in words if word and word[0].isupper())
     return initials
 
@@ -94,14 +98,18 @@ def build_short_journal(long_journal: str, warning_callback: Callable[[str], Non
         flags=re.IGNORECASE
     ).strip()
 
-    # まず辞書で探す
+    # 1. 辞書で探す
     if long_journal in journal_name_dict:
         return journal_name_dict[long_journal]
 
+    words = long_journal.split()
+    # 2. 単語が1つだけならそれを返す
+    if len(words) == 1:
+        return long_journal
+
     if warning_callback:
         warning_callback("*! ! ! ジャーナル名が辞書に見つからなかったため、イニシャルで省略形を作成します。*\n*これは間違っている可能性が大いにあります。*")
-    """括弧内の略称から省略形ジャーナル名を生成する。"""
-    words = long_journal.split()
+    # 3. 括弧内の略称から省略形ジャーナル名を生成する。
     initials = "".join(word[0] for word in words if word and word[0].isupper())
     return initials
 
