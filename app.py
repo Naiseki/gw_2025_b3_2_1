@@ -8,12 +8,13 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 import time
 import logging
 from logging.handlers import RotatingFileHandler
-from slack_sdk.errors import SlackApiError as APIError
+from slack_sdk.errors import SlackApiError
 import threading
 import urllib.request
 import urllib.error
 import datetime
 from slack_handler import handle_message
+from typing import Any
 
 
 load_dotenv()
@@ -21,25 +22,26 @@ app = App(token=os.getenv("SLACK_BOT_TOKEN"))
 
 
 @app.event("message")
-def message_event(event, say, client):
+def message_event(event: Any, say: Any, client: Any) -> None:
     try:
-        logging.info(f"{datetime.datetime.now()} メッセージイベント受信")
+        logging.info("メッセージイベント受信")
         handle_message(event, say, client)
-    except ValueError as e:
-        say(f"{e.__class__.__name__} 不正な値が指定されました: {e}")
-    except NameError as e:
-        say(f"{e.__class__.__name__} 未定義の変数/関数が使用されました: {e}")
-    except RuntimeError as e:
-        say(f"{e.__class__.__name__} 実行時に問題が発生しました: {e}")
     except (MemoryError, RecursionError) as e:
         # 致命的エラーはログを残してプロセスを終了する
         logging.critical("致命的エラーが発生しました: %s", e, exc_info=True)
-        sys.exit(1)
+        raise
     except Exception as e:
-        say(f"{e.__class__.__name__} 予期しないエラーが発生しました: {e}")
+        safe_say(say, f"{e.__class__.__name__} 予期しないエラーが発生しました: {e}")
 
 
-def _ping_healthchecks(url, timeout=10):
+def safe_say(say: Any, message: str) -> None:
+    try:
+        say(message)
+    except Exception as e:
+        logging.error(f"{e.__class__.__name__} Slack へのメッセージ送信に失敗しました: {e}")
+
+
+def _ping_healthchecks(url: str, timeout: int = 10) -> None:
     try:
         req = urllib.request.Request(url, method="GET")
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -50,7 +52,7 @@ def _ping_healthchecks(url, timeout=10):
         logging.warning(f"Healthchecks ping 失敗: {e}", exc_info=True)
 
 
-def start_healthchecks_pinger(url, interval_sec=1800):
+def start_healthchecks_pinger(url: str, interval_sec: int = 1800) -> None:
     def _run():
         # 最初は直ちに ping してから間隔ループ
         _ping_healthchecks(url)
@@ -63,7 +65,7 @@ def start_healthchecks_pinger(url, interval_sec=1800):
     logging.info("Healthchecks pinger を起動しました: url=%s interval=%ss", url, interval_sec)
 
 
-def setup_logging():
+def setup_logging() -> None:
     """RotatingFileHandler を使ってログローテーションを設定する。環境変数で上書き可。"""
     log_file = os.getenv("LOG_FILE", "bib_bot.log")
     max_bytes = 10 * 1024 * 1024 # default 10MB
@@ -105,7 +107,7 @@ if __name__ == "__main__":
             # handler.start() はブロッキング呼び出しなので、ここで接続が維持される
             handler.start()
             break
-        except APIError as e:
+        except SlackApiError as e:
             # Slack API エラーは致命的とみなしてログを出して終了
             err_msg = getattr(e, "response", {}).get("error", str(e))
             logging.error(f"Slack APIエラーが発生しました: {err_msg}")
