@@ -44,7 +44,6 @@ def _ping_healthchecks(url, timeout=10):
         req = urllib.request.Request(url, method="GET")
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             status = resp.getcode()
-            logging.info(f"Healthchecks ping 成功: {url} ステータス {status}")
     except urllib.error.HTTPError as e:
         logging.warning(f"Healthchecks ping HTTPエラー {e.code}: {e}")
     except Exception as e:
@@ -81,11 +80,6 @@ def setup_logging():
     file_handler = RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-
-    # コンソールにも出力
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
 
 
 if __name__ == "__main__":
