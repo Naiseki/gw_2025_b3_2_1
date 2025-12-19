@@ -7,17 +7,18 @@ from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 import time
 import logging
+from logging.handlers import RotatingFileHandler
 from slack_sdk.errors import SlackApiError as APIError
 import threading
 import urllib.request
 import urllib.error
 import datetime
-
 from slack_handler import handle_message
 
-load_dotenv()
 
+load_dotenv()
 app = App(token=os.getenv("SLACK_BOT_TOKEN"))
+
 
 @app.event("message")
 def message_event(event, say, client):
@@ -37,6 +38,7 @@ def message_event(event, say, client):
     except Exception as e:
         say(f"{e.__class__.__name__} 予期しないエラーが発生しました: {e}")
 
+
 def _ping_healthchecks(url, timeout=10):
     try:
         req = urllib.request.Request(url, method="GET")
@@ -47,6 +49,7 @@ def _ping_healthchecks(url, timeout=10):
         logging.warning(f"Healthchecks ping HTTPエラー {e.code}: {e}")
     except Exception as e:
         logging.warning(f"Healthchecks ping 失敗: {e}", exc_info=True)
+
 
 def start_healthchecks_pinger(url, interval_sec=1800):
     def _run():
@@ -61,8 +64,32 @@ def start_healthchecks_pinger(url, interval_sec=1800):
     logging.info("Healthchecks pinger を起動しました: url=%s interval=%ss", url, interval_sec)
 
 
+def setup_logging():
+    """RotatingFileHandler を使ってログローテーションを設定する。環境変数で上書き可。"""
+    log_file = os.getenv("LOG_FILE", "bib_bot.log")
+    max_bytes = 10 * 1024 * 1024 # default 10MB
+    backup_count = 5
+    level_name = "INFO"
+    level = getattr(logging, level_name, logging.INFO)
+
+    logger = logging.getLogger()
+    logger.setLevel(level)
+
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+
+    # ファイルハンドラ（ローテーション）
+    file_handler = RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # コンソールにも出力
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", filename="bib_bot.log")
+    setup_logging()
     retry_count = 0
     max_retries = 5
     backoff_factor = 2
