@@ -13,11 +13,15 @@ Slack上でBibTeXを整形して返すボットです。DMまたはメンショ�
 - `SLACK_BOT_TOKEN`: xoxb- で始まるBot Token
 - `SLACK_APP_TOKEN`: xapp- で始まるApp-Level Token
 - `SLACK_CHANNEL`: メッセージを送信するSlackチャンネルID
+- `HEALTHCHECKS_URL`: healthchecks.io の ping 用 URL。未設定の場合は通知は行われません。
+- `HEALTHCHECKS_INTERVAL`: ping の実行間隔（秒）。デフォルトは `1800`（30分）。
 
 例:
 - `SLACK_BOT_TOKEN=xoxb-...`
 - `SLACK_APP_TOKEN=xapp-...`
 - `SLACK_CHANNEL=...`
+- `HEALTHCHECKS_URL=https://hc-ping.com/...`
+- `HEALTHCHECKS_INTERVAL=1800`
 
 ## 実行
 ```bash
