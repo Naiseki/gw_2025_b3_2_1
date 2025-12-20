@@ -1,25 +1,51 @@
-# app.py
-
 import os
 import sys
-from dotenv import load_dotenv
-from slack_bolt import App
-from slack_bolt.adapter.socket_mode import SocketModeHandler
 import time
 import logging
-from logging.handlers import RotatingFileHandler
-from slack_sdk.errors import SlackApiError
 import threading
 import urllib.request
 import urllib.error
-import datetime
-from slack_handler import handle_message
 from typing import Any
+from dotenv import load_dotenv
+from slack_bolt import App
+from slack_bolt.adapter.socket_mode import SocketModeHandler
+from slack_sdk.errors import SlackApiError
+from slack_handler import handle_message
+from logging.handlers import RotatingFileHandler
 
+
+# =========================
+# 初期化
+# =========================
 
 load_dotenv()
+
 app = App(token=os.getenv("SLACK_BOT_TOKEN"))
 
+
+# =========================
+# Logging
+# =========================
+
+def setup_logging() -> None:
+    log_file = os.getenv("LOG_FILE", "bib_bot.log")
+    max_bytes = 10 * 1024 * 1024  # 10MB
+    backup_count = 5
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+
+    handler = RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
+
+
+# =========================
+# Slack Event Handler
+# =========================
 
 @app.event("message")
 def message_event(event: Any, say: Any, client: Any) -> None:
@@ -27,9 +53,10 @@ def message_event(event: Any, say: Any, client: Any) -> None:
         logging.info("メッセージイベント受信")
         handle_message(event, say, client)
     except (MemoryError, RecursionError) as e:
-        # 致命的エラーはログを残してプロセスを終了する
-        logging.critical("致命的エラーが発生しました: %s", e, exc_info=True)
-        raise
+        # プロセス破壊の可能性が高いエラーは即終了
+        logging.critical("致命的エラー: %s", e, exc_info=True)
+        logging.shutdown()
+        os._exit(1)
     except Exception as e:
         safe_say(say, f"{e.__class__.__name__} 予期しないエラーが発生しました: {e}")
 
@@ -38,98 +65,120 @@ def safe_say(say: Any, message: str) -> None:
     try:
         say(message)
     except Exception as e:
-        logging.error(f"{e.__class__.__name__} Slack へのメッセージ送信に失敗しました: {e}")
+        logging.warning("%s Slack 送信失敗: %s", e.__class__.__name__, e)
 
 
-def _ping_healthchecks(url: str, timeout: int = 10) -> None:
+# =========================
+# Healthchecks
+# =========================
+
+def ping_healthchecks(url: str, timeout: int = 10) -> None:
     try:
         req = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            status = resp.getcode()
-    except urllib.error.HTTPError as e:
-        logging.warning(f"Healthchecks ping HTTPエラー {e.code}: {e}")
+        with urllib.request.urlopen(req, timeout=timeout):
+            pass
     except Exception as e:
-        logging.warning(f"Healthchecks ping 失敗: {e}", exc_info=True)
+        logging.warning("Healthchecks ping 失敗: %s", e)
 
 
-def start_healthchecks_pinger(url: str, interval_sec: int = 1800) -> None:
-    def _run():
-        # 最初は直ちに ping してから間隔ループ
-        _ping_healthchecks(url)
-        while True:
-            time.sleep(interval_sec)
-            _ping_healthchecks(url)
+# =========================
+# Slack接続確認 → Healthchecks
+# =========================
 
-    t = threading.Thread(target=_run, daemon=True, name="healthchecks-pinger")
-    t.start()
-    logging.info("Healthchecks pinger を起動しました: url=%s interval=%ss", url, interval_sec)
+def slack_heartbeat(
+    client,
+    hc_url: str | None,
+    interval: int = 1800,
+    retries: int = 3,
+    retry_interval: int = 15,
+) -> None:
+    """
+    - Slack Web API が retries 回以内に成功すれば healthchecks.io に ping
+    - retries 回連続失敗したら半死と判断してプロセス終了
+    """
+    while True:
+        for i in range(retries):
+            try:
+                client.api_test()
+                if hc_url:
+                    ping_healthchecks(hc_url)
+                break
+            except Exception as e:
+                logging.warning("Slack heartbeat 失敗 (%d/%d): %s", i + 1, retries, e)
+                time.sleep(retry_interval)
+        else:
+            logging.critical("Slack 接続が復旧しません。プロセスを終了します。")
+            logging.shutdown()
+            os._exit(1)
+
+        # 次の heartbeat まで待機
+        time.sleep(interval)
 
 
-def setup_logging() -> None:
-    """RotatingFileHandler を使ってログローテーションを設定する。環境変数で上書き可。"""
-    log_file = os.getenv("LOG_FILE", "bib_bot.log")
-    max_bytes = 10 * 1024 * 1024 # default 10MB
-    backup_count = 5
-    level_name = "INFO"
-    level = getattr(logging, level_name, logging.INFO)
 
-    logger = logging.getLogger()
-    logger.setLevel(level)
-
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-
-    # ファイルハンドラ（ローテーション）
-    file_handler = RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8")
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-
+# =========================
+# Main
+# =========================
 
 if __name__ == "__main__":
     setup_logging()
+
+    # Socket Mode 再接続用バックオフ変数
     retry_count = 0
     max_retries = 5
     backoff_factor = 2
     base_sleep = 1
+    last_failure_time = 0
+    retries_reset_duration = 600  # 10分
 
-    # healthchecks の設定があれば pinger を一度だけ起動
+    # Healthchecks 設定
     hc_url = os.getenv("HEALTHCHECKS_URL")
-    if hc_url:
-        try:
-            interval = int(os.getenv("HEALTHCHECKS_INTERVAL", 1800))
-        except ValueError:
-            interval = 1800
-            logging.warning("HEALTHCHECKS_INTERVAL が不正です。デフォルト 1800 秒を使用します。")
-        start_healthchecks_pinger(hc_url, interval)
+    hc_interval = int(os.getenv("HEALTHCHECKS_INTERVAL", "1800"))
 
+    # Slack heartbeat スレッド起動
+    if hc_url:
+        t = threading.Thread(
+            target=slack_heartbeat,
+            daemon=True,
+            args=(app.client, hc_url, hc_interval),
+            name="slack-heartbeat",
+        )
+        t.start()
+        logging.info("Slack heartbeat 開始")
+
+    # Socket Mode 再接続ループ（完全切断用）
     while True:
         try:
             handler = SocketModeHandler(app, os.getenv("SLACK_APP_TOKEN"))
-            # handler.start() はブロッキング呼び出しなので、ここで接続が維持される
             handler.start()
             break
-        except SlackApiError as e:
-            # Slack API エラーは致命的とみなしてログを出して終了
-            err_msg = getattr(e, "response", {}).get("error", str(e))
-            logging.error(f"Slack APIエラーが発生しました: {err_msg}")
-            break
         except (ConnectionResetError, BrokenPipeError) as e:
+            if time.time() - last_failure_time > retries_reset_duration:
+                retry_count = 0  # リトライカウントリセット
+            last_failure_time = time.time()
+
             retry_count += 1
             if retry_count > max_retries:
-                logging.error(f"ソケットエラーが繰り返し発生しました: {e}。再試行を中止します。")
+                logging.critical("再接続失敗が続いたため終了: %s", e)
                 break
+
             sleep_time = base_sleep * (backoff_factor ** (retry_count - 1))
-            logging.warning(f"ソケット接続がリセットされました (試行 {retry_count}/{max_retries})。{sleep_time}s 後に再接続します: {e}")
+            logging.warning(
+                "Socket 切断 (%d/%d)。%ds 後に再接続します: %s",
+                retry_count,
+                max_retries,
+                sleep_time,
+                e,
+            )
             time.sleep(sleep_time)
-            continue
+        except SlackApiError as e:
+            logging.critical("Slack API エラー: %s", e)
+            break
         except (MemoryError, RecursionError) as e:
-            # 致命的エラー発生時はログを残して直ちに終了
-            logging.critical("致命的エラーが発生しました: %s", e, exc_info=True)
+            # プロセス破壊の可能性が高いエラーは即終了
+            logging.critical("致命的エラー: %s", e, exc_info=True)
+            logging.shutdown()
             os._exit(1)
-        except KeyboardInterrupt:
-            logging.info("停止シグナルを受け取りました。終了します。")
-            break
         except Exception as e:
-            logging.error(f"アプリの起動中にエラーが発生しました: {e}")
+            logging.critical("起動中に予期しないエラー: %s", e, exc_info=True)
             break
-        else:
-            retry_count = 0  # 成功した場合はリトライカウントをリセット
