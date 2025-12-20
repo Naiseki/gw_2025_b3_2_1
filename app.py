@@ -50,7 +50,7 @@ def setup_logging() -> None:
 @app.event("message")
 def message_event(event: Any, say: Any, client: Any) -> None:
     try:
-        logging.info("メッセージイベント受信")
+        logging.info("Message event received. ID=%s", event.get("user", "unknown"))
         handle_message(event, say, client)
     except (MemoryError, RecursionError) as e:
         # プロセス破壊の可能性が高いエラーは即終了
