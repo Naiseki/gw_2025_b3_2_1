@@ -40,10 +40,10 @@ class InproceedingsParser(BaseParser):
         if long_booktitle_clean and (booktitle_mode == "long" or booktitle_mode == "both"):
             lines.append(f'    booktitle = "{long_booktitle_clean}",')
 
-        if "pages" in fields:
-            lines.append(f'    pages = "{fields["pages"]}",')
-        if "year" in fields:
-            lines.append(f'    year = "{fields["year"]}",')
+        if pages := fields.get("pages"):
+            lines.append(f'    pages = "{pages}",')
+        if year := fields.get("year"):
+            lines.append(f'    year = "{year}",')
         if url:
             lines.append(f'    url = "{url}",')
         lines.append("}")

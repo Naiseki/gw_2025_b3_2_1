@@ -35,14 +35,14 @@ class ArticleParser(BaseParser):
         if long_journal and (booktitle_mode == "long" or booktitle_mode == "both"):
             lines.append(f'    journal = "{long_journal}",')
         
-        if "volume" in fields:
-            lines.append(f'    volume = "{fields["volume"]}",')
-        if "number" in fields:
-            lines.append(f'    number = "{fields["number"]}",')
-        if "pages" in fields:
-            lines.append(f'    pages = "{fields["pages"]}",')
-        if "year" in fields:
-            lines.append(f'    year = "{fields["year"]}",')
+        if volume := fields.get("volume"):
+            lines.append(f'    volume = "{volume}",')
+        if number := fields.get("number"):
+            lines.append(f'    number = "{number}",')
+        if pages := fields.get("pages"):
+            lines.append(f'    pages = "{pages}",')
+        if year := fields.get("year"):
+            lines.append(f'    year = "{year}",')
         if url:
             lines.append(f'    url = "{url}",')
         lines.append("}")

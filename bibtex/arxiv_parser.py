@@ -23,10 +23,10 @@ class ArxivParser(BaseParser):
         lines = [f"@article{{{new_key},"]
         lines.append(f"    title = {{{{{title}}}}},")
         lines.append(f'    author = "{author}",')
-        if "eprint" in fields:
-            lines.append(f'    journal = "arXiv:{fields["eprint"]}",')
-        if "year" in fields:
-            lines.append(f'    year = "{fields.get("year")}",')
+        if eprint := fields.get("eprint"):
+            lines.append(f'    journal = "arXiv:{eprint}",')
+        if year := fields.get("year"):
+            lines.append(f'    year = "{year}",')
         if url:
             lines.append(f'    url = "{url}",')
         lines.append("}")
