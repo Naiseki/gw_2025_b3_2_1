@@ -22,7 +22,10 @@ class ArticleParser(BaseParser):
         author = format_authors(fields.get("author", ""))
         long_journal = fields.get("journal", "")
         short_journal = build_short_journal(long_journal, warning_callback) if booktitle_mode == "short" or booktitle_mode == "both" else ""
-        url = (fields.get("url", "") or "").strip("<>").rstrip("/")
+        url = (fields.get("url", "") or "")
+            .strip("<>")
+            .rstrip("/")
+            .split("|", 1)[0]
 
         lines = [f"@article{{{new_key},"]
         lines.append(f"    title = {{{{{title}}}}},")
