@@ -15,7 +15,7 @@ class ArxivParser(BaseParser):
         fields = self.get_fields(raw_bib, field_names)
         title = normalize_title(fields.get("title", ""))
         author = format_authors(fields.get("author", ""))
-        url = (fields.get("url", "") or "").strip("<>").rstrip("/").split("|", 1)[0]
+        url = (fields.get("url", "") or "").split("|", 1)[0].strip("<>").rstrip("/")
 
         lines = [f"@article{{{new_key},"]
         lines.append(f"    title = {{{{{title}}}}},")
