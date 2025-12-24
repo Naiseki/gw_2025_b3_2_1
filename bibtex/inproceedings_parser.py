@@ -24,10 +24,7 @@ class InproceedingsParser(BaseParser):
         long_booktitle_clean = re.sub(r"\s*\([^)]*\)\s*$", "", long_booktitle).strip()
         short_booktitle = build_short_booktitle(long_booktitle_clean, warning_callback) if booktitle_mode == "short" or booktitle_mode == "both" else ""
 
-        url = (fields.get("url", "") or "")
-            .strip("<>")
-            .rstrip("/")
-            .split("|", 1)[0]
+        url = (fields.get("url", "") or "").strip("<>").rstrip("/").split("|", 1)[0]
 
 
         lines = [f"@inproceedings{{{new_key},"]
