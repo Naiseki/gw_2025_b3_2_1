@@ -28,6 +28,8 @@ def handle_message(event, say, client):
     if is_mentioned:
         text = re.sub(rf"<@{bot_user_id}>", "", text).strip()
 
+    text = text.strip().strip("`")
+
     # オプション解析: -s で短縮形、-l で正式名称、何もなしで両方表示
     # オプションは @の前に書かないといけない
     before_at, at_and_after = "", ""
