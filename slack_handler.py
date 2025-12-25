@@ -5,6 +5,8 @@ import re
 
 def handle_message(event, say, client):
     """DM またはメンションされたメッセージを BibTeX 変換。"""
+
+    # ボットのメッセージは無視
     if event.get("subtype") == "bot_message":
         return
 

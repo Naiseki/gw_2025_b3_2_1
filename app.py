@@ -47,10 +47,24 @@ def setup_logging() -> None:
 # Slack Event Handler
 # =========================
 
-@app.event("message")
-def message_event(event: Any, say: Any, client: Any) -> None:
+@app.event("app_mention")
+def on_mention(event: Any, say: Any, client: Any) -> None:
     try:
-        logging.info("Message event received. ID=%s", event.get("user", "unknown"))
+        logging.info("Mention event received. ID=%s, subtype=%s", event.get("user", "unknown"), event.get("subtype", "none"))
+        handle_message(event, say, client)
+    except (MemoryError, RecursionError) as e:
+        # プロセス破壊の可能性が高いエラーは即終了
+        logging.critical("致命的エラー: %s", e, exc_info=True)
+        logging.shutdown()
+        os._exit(1)
+    except Exception as e:
+        safe_say(say, f"{e.__class__.__name__} 予期しないエラーが発生しました: {e}")
+
+
+@app.event("message")
+def on_message(event: Any, say: Any, client: Any) -> None:
+    try:
+        logging.info("Message event received. ID=%s, subtype=%s", event.get("user", "unknown"), event.get("subtype", "none"))
         handle_message(event, say, client)
     except (MemoryError, RecursionError) as e:
         # プロセス破壊の可能性が高いエラーは即終了
