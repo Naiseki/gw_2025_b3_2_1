@@ -48,6 +48,7 @@ def setup_logging() -> None:
 # =========================
 
 @app.event("message")
+@app.event("app_mention")
 def message_event(event: Any, say: Any, client: Any) -> None:
     try:
         logging.info("Message event received. ID=%s", event.get("user", "unknown"))
