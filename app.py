@@ -196,3 +196,6 @@ if __name__ == "__main__":
         except Exception as e:
             logging.critical("起動中に予期しないエラー: %s", e, exc_info=True)
             break
+
+    logging.info("プロセス終了")
+    logging.shutdown()
