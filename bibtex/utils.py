@@ -6,6 +6,8 @@ from typing import Callable
 from titlecase import titlecase
 from load_resource import load_journal_name_dict
 
+EntryData = dict[str, str]
+
 def strip_all_braces(text: str) -> str:
     while re.search(r'{[^{}]*}', text):
         text = re.sub(r'{([^{}]*)}', r'\1', text)
@@ -17,17 +19,6 @@ def normalize_title(raw_title: str) -> str:
     raw_title = strip_all_braces(raw_title)
     return titlecase(raw_title)
 
-
-def extract_field(raw_bib: str, field: str) -> str:
-    """field をダブルクオート・波括弧双方から抽出する（大文字小文字を無視）。"""
-    field_esc = re.escape(field)
-    p1 = rf'\b{field_esc}\s*=\s*"([^"]+)"'
-    p2 = rf'\b{field_esc}\s*=\s*{{([^}}]+)}}'
-    for p in (p1, p2):
-        m = re.search(p, raw_bib, re.DOTALL | re.IGNORECASE)
-        if m:
-            return m.group(1).strip()
-    return ""
 
 
 def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
@@ -126,30 +117,26 @@ def format_authors(raw_author: str, line_break_after_and: bool = False) -> str:
 
 class BaseParser(ABC):
     @abstractmethod
-    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
-        """raw_bib を整形して返す。
-        
+    def parse(self, entry: EntryData, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
+        """entry を整形して返す。
+
         Args:
             booktitle_mode: "short"（短縮形）, "long"（正式名称）, "both"（両方）
         """
-        ...
 
 
-    def get_fields(self, raw_bib: str, fields: list[tuple[str, bool]]) -> dict[str, str]:
-        """ 
-        fields で指定されたフィールドを抽出する。必須フィールドが欠けている場合は例外を投げる。
-        Args:
-            raw_bib: BibTeX エントリの文字列
-            fields: (フィールド名, 必須かどうか) のタプルのリスト
-        Returns:
-            フィールド名をキー、抽出した値を値とする辞書
-        """
-        result = {}
-        missing_fields = []
+    def get_fields(self, entry: EntryData, fields: list[tuple[str, bool]]) -> dict[str, str]:
+        """指定されたフィールドを取り出し、必要なフィールドが欠けていれば例外を投げる。"""
+        normalized_entry = {}
+        for key, value in entry.items():
+            normalized_entry[key.lower()] = value.strip() if isinstance(value, str) else str(value)
+
+        result: dict[str, str] = {}
+        missing_fields: list[str] = []
         for field, required in fields:
-            data = extract_field(raw_bib, field)
-            if data:
-                result[field] = data
+            value = normalized_entry.get(field.lower(), "").strip()
+            if value:
+                result[field] = value
             elif required:
                 missing_fields.append(field)
 

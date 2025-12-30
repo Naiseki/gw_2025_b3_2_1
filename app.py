@@ -136,6 +136,7 @@ def slack_heartbeat(
 
 if __name__ == "__main__":
     setup_logging()
+    logging.info("bib_bot 起動")
 
     # Socket Mode 再接続用バックオフ変数
     retry_count = 0

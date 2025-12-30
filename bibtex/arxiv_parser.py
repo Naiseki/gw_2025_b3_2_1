@@ -1,10 +1,9 @@
-# bibtex/arxiv_parser.py
-
 from typing import Callable
-from .utils import BaseParser, extract_field, normalize_title, format_authors
+from .utils import BaseParser, EntryData, normalize_title, format_authors
+
 
 class ArxivParser(BaseParser):
-    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
+    def parse(self, entry: EntryData, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
         field_names = [
             ("title", True), 
             ("author", True), 
@@ -12,7 +11,7 @@ class ArxivParser(BaseParser):
             ("year", False),
             ("url", False), 
         ]
-        fields = self.get_fields(raw_bib, field_names)
+        fields = self.get_fields(entry, field_names)
         title = normalize_title(fields.get("title", ""))
         author = format_authors(fields.get("author", ""))
         url = (fields.get("url", "") or "").split("|", 1)[0].strip("<>").rstrip("/")

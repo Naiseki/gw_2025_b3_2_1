@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "dotenv>=0.9.9",
+    "bibtexparser>=2.0.0b8",
     "slack-bolt>=1.27.0",
     "titlecase>=2.4.1",
 ]
