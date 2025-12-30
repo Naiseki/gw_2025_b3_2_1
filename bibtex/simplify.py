@@ -43,16 +43,14 @@ def _normalize_entry(entry: BibtexEntry) -> EntryData:
 
 
 def detect_source(entry: BibtexEntry, entry_data: EntryData, raw_bib: str) -> str:
+    if "arXiv" in raw_bib:
+        return "arxiv"
     raw_lower = raw_bib.lower()
     entry_type = entry_data.get("entrytype", entry.entry_type).lower()
-
-    if entry_data.get("eprint") or "arxiv" in raw_lower:
-        return "arxiv"
     if entry_type == "inproceedings" or "@inproceedings" in raw_lower:
         return "inproceedings"
     if entry_type == "article" or "@article" in raw_lower:
         return "article"
-
     raise ValueError("対応していないBibTeXエントリです🙇‍♂️")
 
 
