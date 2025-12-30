@@ -10,11 +10,13 @@ from bibtexparser.library import Library
 from bibtexparser.model import Entry as BibtexEntry
 from bibtexparser.model import DuplicateFieldKeyBlock
 from bibtexparser.model import ParsingFailedBlock
+from bibtexparser.writer import BibtexFormat
 
 from .arxiv_parser import ArxivParser
 from .article_parser import ArticleParser
 from .inproceedings_parser import InproceedingsParser
 from .utils import BaseParser, EntryData
+from .middleware.quotestylemiddleware import QuoteStyleMiddleware
 
 _SKIP_ENTRY_TYPES = {"comment", "string", "preamble"}
 _ENTRY_PATTERN = re.compile(r"@(?P<type>[A-Za-z]+)\s*{", re.IGNORECASE)
@@ -250,7 +252,9 @@ def simplify_bibtex_entry(
 
 
 
-    result = bibtexparser.write_string(library)
+    format = BibtexFormat()
+    format.trailing_comma = True
+    result = bibtexparser.write_string(library, unparse_stack=[QuoteStyleMiddleware()], bibtex_format=format)
     return result
 
 
