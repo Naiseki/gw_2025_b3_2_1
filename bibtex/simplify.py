@@ -1,5 +1,6 @@
 import re
 from typing import Callable
+from collections import defaultdict
 
 import bibtexparser
 from bibtexparser.middlewares.fieldkeys import NormalizeFieldKeys
@@ -8,12 +9,16 @@ from bibtexparser.middlewares.parsestack import default_parse_stack
 from bibtexparser.library import Library
 from bibtexparser.model import Entry as BibtexEntry
 from bibtexparser.model import DuplicateFieldKeyBlock
+from bibtexparser.model import ParsingFailedBlock
 
 from .arxiv_parser import ArxivParser
 from .article_parser import ArticleParser
 from .inproceedings_parser import InproceedingsParser
 from .utils import BaseParser, EntryData
 
+_SKIP_ENTRY_TYPES = {"comment", "string", "preamble"}
+_ENTRY_PATTERN = re.compile(r"@(?P<type>[A-Za-z]+)\s*{", re.IGNORECASE)
+_LONGEST_FIELD_FOR_DUPES = {"booktitle", "journal"}
 
 class PreferLongerFieldValue(Middleware):
     def __init__(self, field_names: set[str]):
@@ -52,57 +57,86 @@ class PreferLongerFieldValue(Middleware):
 def _build_parse_stack() -> list[Middleware]:
     stack: list[Middleware] = default_parse_stack(allow_inplace_modification=True)
     stack.append(NormalizeFieldKeys())
-    stack.append(PreferLongerFieldValue(_LONGEST_FIELD_FOR_DUPES))
+    # stack.append(PreferLongerFieldValue(_LONGEST_FIELD_FOR_DUPES))
     return stack
 
 
-def modify_raw_bib(raw_bib: str, duplicate_keys: list[str]) -> str:
-    duplicate_keys = set(k.lower() for k in duplicate_keys)
-    pattern = r'(\w+)\s*=\s*[{"]?(. *?)[}"]?\s*,?'
-    matches = list(re.finditer(pattern, raw_bib, re.IGNORECASE))
-    key_values = {}
-    for match in matches:
-        key = match.group(1).lower()
-        value = match.group(2)
-        if key in duplicate_keys:
-            key_values.setdefault(key, []).append((match, value))
-    selected = {}
-    for key, items in key_values.items():
-        best = max(items, key=lambda x: len(x[1]))
-        selected[key] = best[1]
-    modified = raw_bib
-    for key, items in key_values.items():
-        for match, _ in items:
-            modified = modified.replace(match.group(0), '', 1)
-    modified = re.sub(r',\s*,', ',', modified)
-    brace_end = modified.rfind('}')
-    if brace_end == -1:
-        return modified
-    insert_pos = brace_end
-    fields_to_add = []
-    for key, value in selected.items():
-        field = f"{key} = {{{value}}},"
-        fields_to_add.append(field)
-    if fields_to_add:
-        insert_str = ' ' + ' '.join(fields_to_add) + ' '
-        modified = modified[:insert_pos] + insert_str + modified[insert_pos:]
-    return modified
+def deduplicate_entry(entry: str, duplicate_keys: list[str]) -> str:
+    keys = "|".join(map(re.escape, duplicate_keys))
+
+    pattern = re.compile(
+        rf'\b({keys})\b\s*=\s*(?:"(.*?)"|{{(.*?)}})\s*,',
+        re.IGNORECASE | re.DOTALL,
+    )
+
+    matches = list(pattern.finditer(entry))
+    if not matches:
+        return entry
+
+    # key ごとに一番長い value を選ぶ
+    best_by_key = {}
+    spans_to_remove = []
+
+    for m in matches:
+        key = m.group(1).lower()
+        value = m.group(2) if m.group(2) is not None else m.group(3)
+        value = value.strip()
+
+        spans_to_remove.append(m.span())
+
+        if key not in best_by_key or len(value) > len(best_by_key[key]):
+            best_by_key[key] = value
+
+    # 元の entry から重複フィールドをすべて削除（後ろから）
+    new_entry = entry
+    for start, end in sorted(spans_to_remove, reverse=True):
+        new_entry = new_entry[:start] + new_entry[end:]
+
+    # 採用したフィールドを 1 回だけ追加（末尾手前）
+    insert_pos = new_entry.rfind("}")
+    if insert_pos == -1:
+        return entry  # 念のため
+
+    fields_str = ""
+    for key, value in best_by_key.items():
+        fields_str += f"  {key} = {{{value}}},\n"
+
+    new_entry = (
+        new_entry[:insert_pos]
+        + fields_str
+        + new_entry[insert_pos:]
+    )
+
+    return new_entry
 
 
-def _parse_bibtex_entry(raw_bib: str) -> BibtexEntry:
+def _needs_dedup(block: ParsingFailedBlock) -> bool:
+    if not isinstance(block, DuplicateFieldKeyBlock):
+        return False
+    normalized_keys = {k.lower() for k in block.duplicate_keys}
+    if normalized_keys & _LONGEST_FIELD_FOR_DUPES:
+        return True
+    return False
+
+
+def _parse_bibtex_entries(raw_bib: str) -> Library:
     parse_stack = _build_parse_stack()
     library = bibtexparser.parse_string(raw_bib, parse_stack=parse_stack)
+
+    for block in library.failed_blocks:
+        if _needs_dedup(block):
+            modified_entry = deduplicate_entry(block.raw, block.duplicate_keys)
+            print("重複フィールドを解消したエントリを再解析中...")
+            print("modified_entry:", modified_entry)
+            modified_library = bibtexparser.parse_string(modified_entry, parse_stack=parse_stack)
+            library.add(modified_library.entries)
+
+    library.remove(library.failed_blocks)
+
     if not library.entries:
-        if library.failed_blocks:
-            failed = library.failed_blocks[0]
-            if isinstance(failed, DuplicateFieldKeyBlock):
-                modified_raw = modify_raw_bib(raw_bib, failed.duplicate_keys)
-                return _parse_bibtex_entry(modified_raw)
-            else:
-                raise ValueError("BibTeXエントリが見つかりません。\n失敗フィールド:", failed.raw)
-        else:
-            raise ValueError("BibTeXエントリが見つかりません。")
-    return library.entries[0]
+        raise ValueError("有効なBibTeXエントリが見つかりません🥶")
+
+    return library
 
 
 def _normalize_entry(entry: BibtexEntry) -> EntryData:
@@ -140,9 +174,6 @@ _PARSERS: dict[str, BaseParser] = {
     "arxiv": ArxivParser(),
 }
 
-_SKIP_ENTRY_TYPES = {"comment", "string", "preamble"}
-_ENTRY_PATTERN = re.compile(r"@(?P<type>[A-Za-z]+)\s*{", re.IGNORECASE)
-_LONGEST_FIELD_FOR_DUPES = {"booktitle", "journal"}
 
 
 def _extract_entry_blocks(raw_bib: str) -> list[tuple[int, int, str, str]]:
@@ -210,7 +241,19 @@ def simplify_bibtex_entry(
     返り値:
         簡略化されたBibTeXエントリ文字列
     """
-    
+
+    library = _parse_bibtex_entries(raw_bib)
+    first_entry = library.entries[0]
+    for f in first_entry.fields:
+        print(f"{f.key}: {f.value}")
+
+
+
+
+    result = bibtexparser.write_string(library)
+    return result
+
+
     entry_blocks = _extract_entry_blocks(raw_bib)
     processable_blocks = [block for block in entry_blocks if block[3] not in _SKIP_ENTRY_TYPES]
 
