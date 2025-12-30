@@ -1,3 +1,4 @@
+import re
 from typing import Callable
 
 import bibtexparser
@@ -26,7 +27,7 @@ def _parse_bibtex_entry(raw_bib: str) -> BibtexEntry:
         raise ValueError("BibTeXエントリの解析に失敗しました。") from exc
 
     if not library.entries:
-        raise ValueError("BibTeXエントリが見つかりません。")
+        raise ValueError("BibTeXエントリが見つかりません。\n失敗フィールド:", library.failed_blocks[0].raw)
 
     return library.entries[0]
 
@@ -60,6 +61,59 @@ _PARSERS: dict[str, BaseParser] = {
     "arxiv": ArxivParser(),
 }
 
+_SKIP_ENTRY_TYPES = {"comment", "string", "preamble"}
+_ENTRY_PATTERN = re.compile(r"@(?P<type>[A-Za-z]+)\s*{", re.IGNORECASE)
+
+
+def _extract_entry_blocks(raw_bib: str) -> list[tuple[int, int, str, str]]:
+    blocks: list[tuple[int, int, str, str]] = []
+    pos = 0
+    while True:
+        match = _ENTRY_PATTERN.search(raw_bib, pos)
+        if not match:
+            break
+
+        start = match.start()
+        brace_pos = match.end() - 1
+        depth = 0
+        idx = brace_pos
+        while idx < len(raw_bib):
+            ch = raw_bib[idx]
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = idx
+                    break
+            idx += 1
+        else:
+            raise ValueError("BibTeXエントリの解析に失敗しました。")
+
+        block = raw_bib[start : end + 1]
+        entry_type = match.group("type").lower()
+        blocks.append((start, end + 1, block, entry_type))
+        pos = end + 1
+
+    return blocks
+
+
+def _simplify_single_entry(
+    entry_block: str,
+    key_override: str | None,
+    booktitle_mode: str,
+    warning_callback: Callable[[str], None] | None,
+) -> str:
+    entry = _parse_bibtex_entry(entry_block)
+    entry_data = _normalize_entry(entry)
+    source = detect_source(entry, entry_data, entry_block)
+    parser = _PARSERS[source]
+    key = key_override or entry_data.get("id")
+    if not key:
+        raise ValueError("BibTeXエントリのキーが見つかりません。")
+
+    return parser.parse(entry_data, key, booktitle_mode=booktitle_mode, warning_callback=warning_callback)
+
 
 def simplify_bibtex_entry(
     raw_bib: str,
@@ -67,12 +121,34 @@ def simplify_bibtex_entry(
     booktitle_mode: str = "both",
     warning_callback: Callable[[str], None] | None = None,
 ) -> str:
-    entry = _parse_bibtex_entry(raw_bib)
-    entry_data = _normalize_entry(entry)
-    source = detect_source(entry, entry_data, raw_bib)
-    parser = _PARSERS[source]
-    key = new_key or entry_data.get("id")
-    if not key:
-        raise ValueError("BibTeXエントリのキーが見つかりません。")
+    entry_blocks = _extract_entry_blocks(raw_bib)
+    processable_blocks = [block for block in entry_blocks if block[3] not in _SKIP_ENTRY_TYPES]
 
-    return parser.parse(entry_data, key, booktitle_mode=booktitle_mode, warning_callback=warning_callback)
+    if not processable_blocks:
+        raise ValueError("BibTeXエントリが見つかりませんでした。")
+
+    if new_key and len(processable_blocks) != 1:
+        raise ValueError("new_key は 1 つのエントリが含まれるときのみ利用できます。")
+
+    result_parts: list[str] = []
+    cursor = 0
+    override_key = new_key if len(processable_blocks) == 1 else None
+
+    for start, end, block, entry_type in entry_blocks:
+        result_parts.append(raw_bib[cursor:start])
+        if entry_type in _SKIP_ENTRY_TYPES:
+            result_parts.append(block)
+        else:
+            simplified_entry = _simplify_single_entry(
+                block,
+                override_key,
+                booktitle_mode,
+                warning_callback,
+            )
+            result_parts.append(simplified_entry)
+            override_key = None
+
+        cursor = end
+
+    result_parts.append(raw_bib[cursor:])
+    return "".join(result_parts)
