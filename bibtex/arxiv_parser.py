@@ -7,7 +7,8 @@ class ArxivParser(BaseParser):
         field_names = [
             ("title", True), 
             ("author", True), 
-            ("eprint", True), 
+            ("eprint", False), 
+            ("journal", False),
             ("year", False),
             ("url", False), 
         ]
@@ -15,12 +16,20 @@ class ArxivParser(BaseParser):
         title = normalize_title(fields.get("title", ""))
         author = format_authors(fields.get("author", ""))
         url = (fields.get("url", "") or "").split("|", 1)[0].strip("<>").rstrip("/")
+        eprint = fields.get("eprint")
+        journal = ""
+        if eprint:
+            journal = f"arXiv:{eprint}"
+        elif fields.get("journal"):
+            journal = fields.get("journal")
+        else:
+            raise ValueError("arXivエントリには 'eprint' または 'journal' フィールドが必要です。")
 
         lines = [f"@article{{{new_key},"]
         lines.append(f"    title = {{{{{title}}}}},")
         lines.append(f'    author = "{author}",')
-        if eprint := fields.get("eprint"):
-            lines.append(f'    journal = "arXiv:{eprint}",')
+        if journal:
+            lines.append(f'    journal = "{journal}",')
         if year := fields.get("year"):
             lines.append(f'    year = "{year}",')
         if url:
