@@ -29,12 +29,10 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         
         # URLの整形
         entry = self._clean_url(entry)
-        
-        # キーの変換
-        entry.key = self._generate_key(entry)
-        
+
+        is_arxiv = self._is_arxiv(entry)
         # フィールドの順序整理
-        if self._is_arxiv(entry):
+        if is_arxiv:
             entry = self._reorder_fields(entry, self.ARXIV_ORDER)
         if entry.entry_type.lower() == "article":
             entry = self._reorder_fields(entry, self.ARTICLE_ORDER)
@@ -42,7 +40,8 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             entry = self._reorder_fields(entry, self.INPROCEEDINGS_ORDER)
 
         # 略称フィールドの追加
-        entry = self._add_abbreviated_fields(entry)
+        if not is_arxiv and self.abbreviation_mode in {"short", "both"}:
+            entry = self._add_abbreviated_fields(entry)
         
         return entry
     

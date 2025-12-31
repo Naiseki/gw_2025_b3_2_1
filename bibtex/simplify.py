@@ -6,6 +6,7 @@ import bibtexparser
 from bibtexparser.middlewares.fieldkeys import NormalizeFieldKeys
 from bibtexparser.middlewares.middleware import Middleware
 from bibtexparser.middlewares.parsestack import default_parse_stack
+from bibtexparser.middlewares.latex_encoding import LatexEncodingMiddleware
 from bibtexparser.library import Library
 from bibtexparser.model import Entry as BibtexEntry
 from bibtexparser.model import DuplicateFieldKeyBlock
@@ -18,6 +19,7 @@ from .inproceedings_parser import InproceedingsParser
 from .utils import BaseParser, EntryData
 from .middleware.quotestylemiddleware import QuoteStyleMiddleware
 from .middleware.formatter import BibTeXFormatterMiddleware
+from .middleware.title_formatter import TitleFormatterMiddleware
 
 _SKIP_ENTRY_TYPES = {"comment", "string", "preamble"}
 _ENTRY_PATTERN = re.compile(r"@(?P<type>[A-Za-z]+)\s*{", re.IGNORECASE)
@@ -260,7 +262,12 @@ def simplify_bibtex_entry(
     format.trailing_comma = True
     result = bibtexparser.write_string(
         library, 
-        unparse_stack=[BibTeXFormatterMiddleware(), QuoteStyleMiddleware()], 
+        unparse_stack=[
+            TitleFormatterMiddleware(), 
+            BibTeXFormatterMiddleware(abbreviation_mode=booktitle_mode), 
+            LatexEncodingMiddleware(enclose_urls=False), 
+            QuoteStyleMiddleware()
+        ], 
         bibtex_format=format
     )
     return result
