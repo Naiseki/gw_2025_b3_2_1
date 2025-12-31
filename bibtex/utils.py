@@ -6,36 +6,8 @@ from typing import Callable
 from titlecase import titlecase
 from load_resource import load_journal_name_dict
 
-def strip_all_braces(text: str) -> str:
-    while re.search(r'{[^{}]*}', text):
-        text = re.sub(r'{([^{}]*)}', r'\1', text)
-    return text
-
-
-def normalize_title(raw_title: str) -> str:
-    """BibTeX の {A} 指定を外しつつ titlecase を適用する。"""
-    raw_title = strip_all_braces(raw_title)
-    return titlecase(raw_title)
-
-
-def extract_field(raw_bib: str, field: str) -> str:
-    """field をダブルクオート・波括弧双方から抽出する（大文字小文字を無視）。"""
-    field_esc = re.escape(field)
-    p1 = rf'\b{field_esc}\s*=\s*"([^"]+)"'
-    p2 = rf'\b{field_esc}\s*=\s*{{([^}}]+)}}'
-    for p in (p1, p2):
-        m = re.search(p, raw_bib, re.DOTALL | re.IGNORECASE)
-        if m:
-            return m.group(1).strip()
-    return ""
-
 
 def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
-    conf = _get_short_conference_name(long_booktitle, warning_callback)
-    return f"Proc. of {conf}" if conf else ""
-
-
-def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
     if not long_booktitle:
         return ""
 
@@ -63,8 +35,8 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
 
     # 1. 辞書で探す（部分一致も試みる）
     words = long_booktitle.split()
-    challenge = 4
-    for i in range(min(challenge, len(words))):
+    max_drop = 4
+    for i in range(min(max_drop, len(words))):
         key = " ".join(words[i:])
         value = journal_name_dict.get(key)
         if value is not None:
@@ -112,48 +84,3 @@ def build_short_journal(long_journal: str, warning_callback: Callable[[str], Non
     # 3. 括弧内の略称から省略形ジャーナル名を生成する。
     initials = "".join(word[0] for word in words if word and word[0].isupper())
     return initials
-
-
-def format_authors(raw_author: str, line_break_after_and: bool = False) -> str:
-    """著者数が threshold 以上なら先頭のみ、それ未満なら全員を返す。"""
-    authors = [a.strip() for a in re.split(r"\s+and\s+", raw_author) if a.strip()]
-    if not authors:
-        return ""
-    if line_break_after_and:
-        return " and\n      ".join(authors)
-    return " and ".join(authors)
-
-
-class BaseParser(ABC):
-    @abstractmethod
-    def parse(self, raw_bib: str, new_key: str, booktitle_mode: str = "both") -> str:
-        """raw_bib を整形して返す。
-        
-        Args:
-            booktitle_mode: "short"（短縮形）, "long"（正式名称）, "both"（両方）
-        """
-        ...
-
-
-    def get_fields(self, raw_bib: str, fields: list[tuple[str, bool]]) -> dict[str, str]:
-        """ 
-        fields で指定されたフィールドを抽出する。必須フィールドが欠けている場合は例外を投げる。
-        Args:
-            raw_bib: BibTeX エントリの文字列
-            fields: (フィールド名, 必須かどうか) のタプルのリスト
-        Returns:
-            フィールド名をキー、抽出した値を値とする辞書
-        """
-        result = {}
-        missing_fields = []
-        for field, required in fields:
-            data = extract_field(raw_bib, field)
-            if data:
-                result[field] = data
-            elif required:
-                missing_fields.append(field)
-
-        if missing_fields:
-            raise ValueError(f"必要なフィールドの値がありません: {', '.join(missing_fields)}")
-
-        return result

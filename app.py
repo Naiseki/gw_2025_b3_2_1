@@ -1,3 +1,4 @@
+import signal
 import os
 import sys
 import time
@@ -56,8 +57,9 @@ def on_mention(event: Any, say: Any, client: Any) -> None:
         # プロセス破壊の可能性が高いエラーは即終了
         logging.critical("致命的エラー: %s", e, exc_info=True)
         logging.shutdown()
-        os._exit(1)
+        os.kill(os.getpid(), signal.SIGTERM)
     except Exception as e:
+        logging.error("Mention handler 予期しないエラー: %s", e, exc_info=True)
         safe_say(say, f"{e.__class__.__name__} 予期しないエラーが発生しました: {e}")
 
 
@@ -70,7 +72,7 @@ def on_message(event: Any, say: Any, client: Any) -> None:
         # プロセス破壊の可能性が高いエラーは即終了
         logging.critical("致命的エラー: %s", e, exc_info=True)
         logging.shutdown()
-        os._exit(1)
+        os.kill(os.getpid(), signal.SIGTERM)
     except Exception as e:
         safe_say(say, f"{e.__class__.__name__} 予期しないエラーが発生しました: {e}")
 
@@ -123,7 +125,7 @@ def slack_heartbeat(
         else:
             logging.critical("Slack 接続が復旧しません。プロセスを終了します。")
             logging.shutdown()
-            os._exit(1)
+            os.kill(os.getpid(), signal.SIGTERM)
 
         # 次の heartbeat まで待機
         time.sleep(interval)
@@ -136,6 +138,7 @@ def slack_heartbeat(
 
 if __name__ == "__main__":
     setup_logging()
+    logging.info("bib_bot 起動")
 
     # Socket Mode 再接続用バックオフ変数
     retry_count = 0
@@ -192,7 +195,7 @@ if __name__ == "__main__":
             # プロセス破壊の可能性が高いエラーは即終了
             logging.critical("致命的エラー: %s", e, exc_info=True)
             logging.shutdown()
-            os._exit(1)
+            os.kill(os.getpid(), signal.SIGTERM)
         except Exception as e:
             logging.critical("起動中に予期しないエラー: %s", e, exc_info=True)
             break
