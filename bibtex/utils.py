@@ -6,13 +6,6 @@ from typing import Callable
 from titlecase import titlecase
 from load_resource import load_journal_name_dict
 
-EntryData = dict[str, str]
-
-def strip_all_braces(text: str) -> str:
-    while re.search(r'{[^{}]*}', text):
-        text = re.sub(r'{([^{}]*)}', r'\1', text)
-    return text
-
 
 def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
     if not long_booktitle:
@@ -91,44 +84,3 @@ def build_short_journal(long_journal: str, warning_callback: Callable[[str], Non
     # 3. 括弧内の略称から省略形ジャーナル名を生成する。
     initials = "".join(word[0] for word in words if word and word[0].isupper())
     return initials
-
-
-def format_authors(raw_author: str, line_break_after_and: bool = False) -> str:
-    """著者数が threshold 以上なら先頭のみ、それ未満なら全員を返す。"""
-    authors = [a.strip() for a in re.split(r"\s+and\s+", raw_author) if a.strip()]
-    if not authors:
-        return ""
-    if line_break_after_and:
-        return " and\n      ".join(authors)
-    return " and ".join(authors)
-
-
-class BaseParser(ABC):
-    @abstractmethod
-    def parse(self, entry: EntryData, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
-        """entry を整形して返す。
-
-        Args:
-            booktitle_mode: "short"（短縮形）, "long"（正式名称）, "both"（両方）
-        """
-
-
-    def get_fields(self, entry: EntryData, fields: list[tuple[str, bool]]) -> dict[str, str]:
-        """指定されたフィールドを取り出し、必要なフィールドが欠けていれば例外を投げる。"""
-        normalized_entry = {}
-        for key, value in entry.items():
-            normalized_entry[key.lower()] = value.strip() if isinstance(value, str) else str(value)
-
-        result: dict[str, str] = {}
-        missing_fields: list[str] = []
-        for field, required in fields:
-            value = normalized_entry.get(field.lower(), "").strip()
-            if value:
-                result[field] = value
-            elif required:
-                missing_fields.append(field)
-
-        if missing_fields:
-            raise ValueError(f"必要なフィールドの値がありません: {', '.join(missing_fields)}")
-
-        return result

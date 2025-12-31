@@ -14,7 +14,6 @@ from bibtexparser.model import DuplicateFieldKeyBlock
 from bibtexparser.model import ParsingFailedBlock
 from bibtexparser.writer import BibtexFormat
 
-from .utils import BaseParser, EntryData
 from .middleware.quotestylemiddleware import QuoteStyleMiddleware
 from .middleware.formatter import BibTeXFormatterMiddleware
 from .middleware.title_formatter import TitleFormatterMiddleware
