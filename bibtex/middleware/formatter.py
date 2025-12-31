@@ -147,13 +147,13 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         # booktitleフィールドの処理
         if "booktitle" in fields_dict:
             long_booktitle = str(fields_dict["booktitle"].value)
+
+            # 略称抽出（カッコ内から）
+            long_booktitle, short_booktitle = self._extract_abbreviation(long_booktitle)
             
             # : 以降を除去
             if ":" in long_booktitle:
                 long_booktitle = long_booktitle.split(":", 1)[0].strip()
-            
-            # 略称抽出（カッコ内から）
-            long_booktitle, short_booktitle = self._extract_abbreviation(long_booktitle)
             
             if not short_booktitle:
                 try:
@@ -193,7 +193,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             # 2. 年号を除去 (末尾の数字4桁、およびその前の区切り文字)
             abbr = re.sub(r'[\s\-\u2013\u2014]*\d{4}$', '', abbr).strip()
             
-            if abbr:
+            if abbr and abbr.isupper():
                 return cleaned_text, abbr
             else:
                 # 略称が空になった場合（年号のみだった場合など）はNoneを返す
