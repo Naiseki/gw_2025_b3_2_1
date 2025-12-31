@@ -28,13 +28,13 @@ class TitleFormatterMiddleware(BlockMiddleware):
         
         def protect_match(match):
             protected_parts.append(match.group(0))
-            return f"__protected_{len(protected_parts)-1}__"
+            return f"<<protected-{len(protected_parts)-1}>>"
         
         # 1. 中括弧で囲まれた部分を保護（中括弧自体は削除）
         def protect_braces(match):
             content = match.group(1)
             protected_parts.append(content)
-            return f"__protected_{len(protected_parts)-1}__"
+            return f"<<protected-{len(protected_parts)-1}>>"
         
         title = re.sub(r'\{([^}]+)\}', protect_braces, title)
         
@@ -55,6 +55,6 @@ class TitleFormatterMiddleware(BlockMiddleware):
         
         # 保護された部分を復元
         for i, protected in enumerate(protected_parts):
-            formatted = formatted.replace(f"__protected_{i}__", protected)
+            formatted = formatted.replace(f"<<protected-{i}>>", protected)
         
         return formatted
