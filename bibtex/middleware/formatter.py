@@ -1,3 +1,4 @@
+import re
 from bibtexparser.model import Entry
 from bibtexparser.middlewares.middleware import BlockMiddleware
 from bibtexparser.model import Field
@@ -155,7 +156,6 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
     
     def _remove_trailing_parentheses(self, text: str) -> str:
         """文字列の末尾のカッコ部分を除去"""
-        import re
         # 末尾の (xxx) または （xxx） を除去
         text = re.sub(r'\s*[\(（][^\)）]*[\)）]\s*$', '', text)
         return text.strip()

@@ -14,18 +14,6 @@ def strip_all_braces(text: str) -> str:
     return text
 
 
-def normalize_title(raw_title: str) -> str:
-    """BibTeX の {A} 指定を外しつつ titlecase を適用する。"""
-    raw_title = strip_all_braces(raw_title)
-    return titlecase(raw_title)
-
-
-
-# def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
-#     conf = _get_short_conference_name(long_booktitle, warning_callback)
-#     return f"Proc. of {conf}" if conf else ""
-
-
 def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
     if not long_booktitle:
         return ""
