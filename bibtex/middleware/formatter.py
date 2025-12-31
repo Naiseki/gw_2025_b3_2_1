@@ -31,6 +31,9 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         if self._is_arxiv(entry):
             entry = self._create_arxiv_journal(entry)
         
+        # URLがない場合、DOIからURLを作成
+        entry = self._create_url_from_doi(entry)
+        
         # URLの整形
         entry = self._clean_url(entry)
 
@@ -72,6 +75,19 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             journal_value = f"arXiv:{eprint_value}"
             # journalフィールドを追加
             entry.fields.append(Field(key="journal", value=journal_value))
+        return entry
+    
+    def _create_url_from_doi(self, entry: Entry) -> Entry:
+        """URLがない場合、DOIからURLを作成"""
+        if "url" not in entry.fields_dict and "doi" in entry.fields_dict:
+            doi_value = entry.fields_dict["doi"].value
+            # DOIの値がURL形式でない場合、https://doi.org/ を付与
+            if not doi_value.startswith("http"):
+                url_value = f"https://doi.org/{doi_value}"
+            else:
+                url_value = doi_value
+            
+            entry.fields.append(Field(key="url", value=url_value))
         return entry
     
     def _clean_url(self, entry: Entry) -> Entry:
@@ -116,31 +132,47 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         # journalフィールドの処理
         if "journal" in fields_dict:
             long_journal = str(fields_dict["journal"].value)
-            try:
-                short_journal = build_short_journal(long_journal, warning_callback=self.warning_callback)
-                if short_journal and short_journal != long_journal:
-                    # abbreviation_modeに応じて配置を決定
-                    new_fields = []
-                    for field in entry.fields:
-                        if field.key.lower() == "journal":
-                            if self.abbreviation_mode == "short" or self.abbreviation_mode == "both":
-                                new_fields.append(Field(key="journal", value=short_journal))
-                            if self.abbreviation_mode == "long" or self.abbreviation_mode == "both":
-                                new_fields.append(Field(key="journal", value=long_journal))
-                        else:
-                            new_fields.append(field)
-                    entry.fields = new_fields
-            except ValueError:
-                pass  # 略称が見つからない場合はスキップ
+            
+            # 略称抽出（カッコ内から）
+            long_journal, short_journal = self._extract_abbreviation(long_journal)
+            
+            if not short_journal:
+                try:
+                    short_journal = build_short_journal(long_journal, warning_callback=self.warning_callback)
+                except ValueError:
+                    pass
+
+            if short_journal and short_journal != long_journal:
+                # abbreviation_modeに応じて配置を決定
+                new_fields = []
+                for field in entry.fields:
+                    if field.key.lower() == "journal":
+                        if self.abbreviation_mode == "short" or self.abbreviation_mode == "both":
+                            new_fields.append(Field(key="journal", value=short_journal))
+                        if self.abbreviation_mode == "long" or self.abbreviation_mode == "both":
+                            new_fields.append(Field(key="journal", value=long_journal))
+                    else:
+                        new_fields.append(field)
+                entry.fields = new_fields
         
         # booktitleフィールドの処理
         if "booktitle" in fields_dict:
             long_booktitle = str(fields_dict["booktitle"].value)
-            # 末尾のカッコ部分を除去（例: (TSAR-2022)）
-            long_booktitle = self._remove_trailing_parentheses(long_booktitle)
-            try:
-                short_booktitle = build_short_booktitle(long_booktitle, warning_callback=self.warning_callback)
-                if short_booktitle and short_booktitle != long_booktitle:
+            
+            # : 以降を除去
+            if ":" in long_booktitle:
+                long_booktitle = long_booktitle.split(":", 1)[0].strip()
+            
+            # 略称抽出（カッコ内から）
+            long_booktitle, short_booktitle = self._extract_abbreviation(long_booktitle)
+            
+            if not short_booktitle:
+                try:
+                    short_booktitle = build_short_booktitle(long_booktitle, warning_callback=self.warning_callback)
+                except ValueError:
+                    pass
+
+            if short_booktitle and short_booktitle != long_booktitle:
                     # abbreviation_modeに応じて配置を決定
                     new_fields = []
                     for field in entry.fields:
@@ -152,13 +184,30 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
                         else:
                             new_fields.append(field)
                     entry.fields = new_fields
-            except ValueError:
-                pass  # 略称が見つからない場合はスキップ
         
         return entry
     
-    def _remove_trailing_parentheses(self, text: str) -> str:
-        """文字列の末尾のカッコ部分を除去"""
-        # 末尾の (xxx) または （xxx） を除去
-        text = re.sub(r'\s*[\(（][^\)）]*[\)）]\s*$', '', text)
-        return text.strip()
+    def _extract_abbreviation(self, text: str) -> tuple[str, str | None]:
+        """
+        文字列末尾のカッコ部分を抽出し、略称候補として整形する。
+        戻り値: (カッコを除去した文字列, 整形された略称)
+        """
+        # 末尾の (xxx) または （xxx） を検出
+        match = re.search(r'\s*[\(（]([^\)）]*)[\)）]\s*$', text)
+        if match:
+            content = match.group(1)
+            cleaned_text = text[:match.start()].strip()
+            
+            # 略称の整形
+            # 1. {}を除去
+            abbr = content.replace("{", "").replace("}", "")
+            # 2. 年号を除去 (末尾の数字4桁、およびその前の区切り文字)
+            abbr = re.sub(r'[\s\-\u2013\u2014]*\d{4}$', '', abbr).strip()
+            
+            if abbr:
+                return cleaned_text, abbr
+            else:
+                # 略称が空になった場合（年号のみだった場合など）はNoneを返す
+                return cleaned_text, None
+        
+        return text, None
