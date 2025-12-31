@@ -7,6 +7,7 @@ from bibtexparser.middlewares.fieldkeys import NormalizeFieldKeys
 from bibtexparser.middlewares.middleware import Middleware
 from bibtexparser.middlewares.parsestack import default_parse_stack
 from bibtexparser.middlewares.latex_encoding import LatexEncodingMiddleware
+from bibtexparser.middlewares.latex_encoding import LatexDecodingMiddleware
 from bibtexparser.library import Library
 from bibtexparser.model import Entry as BibtexEntry
 from bibtexparser.model import DuplicateFieldKeyBlock
@@ -26,6 +27,7 @@ def _build_parse_stack() -> list[Middleware]:
     """パーススタックを構築する。"""
     stack: list[Middleware] = default_parse_stack(allow_inplace_modification=True)
     stack.append(NormalizeFieldKeys())
+    stack.append(LatexDecodingMiddleware())
     return stack
 
 
