@@ -3,6 +3,25 @@ revision = 3
 requires-python = ">=3.13"
 
 [[package]]
+name = "bib-bot"
+version = "1.0.1"
+source = { virtual = "." }
+dependencies = [
+    { name = "bibtexparser" },
+    { name = "dotenv" },
+    { name = "slack-bolt" },
+    { name = "titlecase" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "bibtexparser", specifier = ">=2.0.0b8" },
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "slack-bolt", specifier = ">=1.27.0" },
+    { name = "titlecase", specifier = ">=2.4.1" },
+]
+
+[[package]]
 name = "bibtexparser"
 version = "2.0.0b8"
 source = { registry = "https://pypi.org/simple" }
@@ -23,25 +42,6 @@ dependencies = [
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b2/b7/545d2c10c1fc15e48653c91efde329a790f2eecfbbf2bd16003b5db2bab0/dotenv-0.9.9-py2.py3-none-any.whl", hash = "sha256:29cf74a087b31dafdb5a446b6d7e11cbce8ed2741540e2339c69fbef92c94ce9", size = 1892, upload-time = "2025-02-19T22:15:01.647Z" },
-]
-
-[[package]]
-name = "gw-2025-b3-2-1"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "bibtexparser" },
-    { name = "dotenv" },
-    { name = "slack-bolt" },
-    { name = "titlecase" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "bibtexparser", specifier = ">=2.0.0b8" },
-    { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "slack-bolt", specifier = ">=1.27.0" },
-    { name = "titlecase", specifier = ">=2.4.1" },
 ]
 
 [[package]]
