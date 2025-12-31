@@ -40,24 +40,10 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             entry = self._reorder_fields(entry, self.INPROCEEDINGS_ORDER)
 
         # 略称フィールドの追加
-        if not is_arxiv and self.abbreviation_mode in {"short", "both"}:
+        if not is_arxiv:
             entry = self._add_abbreviated_fields(entry)
         
         return entry
-    
-    def _generate_key(self, entry: Entry) -> str:
-        """著者名-発表年-会議名の形式でキーを生成"""
-        author = self._get_first_author(entry)
-        year = entry.fields_dict.get("year", {}).value if "year" in entry.fields_dict else "YEAR"
-        
-        # 会議名/ジャーナル名を取得
-        venue = ""
-        if "booktitle" in entry.fields_dict:
-            venue = build_short_booktitle(entry.fields_dict["booktitle"].value)
-        elif "journal" in entry.fields_dict:
-            venue = build_short_journal(entry.fields_dict["journal"].value)
-
-        return f"{author}-{year}-{venue}"
     
     def _get_first_author(self, entry: Entry) -> str:
         """最初の著者の姓を取得"""
@@ -146,6 +132,8 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         # booktitleフィールドの処理
         if "booktitle" in fields_dict:
             long_booktitle = str(fields_dict["booktitle"].value)
+            # 末尾のカッコ部分を除去（例: (TSAR-2022)）
+            long_booktitle = self._remove_trailing_parentheses(long_booktitle)
             try:
                 short_booktitle = build_short_booktitle(long_booktitle)
                 if short_booktitle and short_booktitle != long_booktitle:
@@ -154,7 +142,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
                     for field in entry.fields:
                         if field.key.lower() == "booktitle":
                             if self.abbreviation_mode == "short" or self.abbreviation_mode == "both":
-                                new_fields.append(Field(key="booktitle", value=short_booktitle))
+                                new_fields.append(Field(key="booktitle", value="Proc. of " + short_booktitle))
                             if self.abbreviation_mode == "long" or self.abbreviation_mode == "both":
                                 new_fields.append(Field(key="booktitle", value=long_booktitle))
                         else:
@@ -164,3 +152,10 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
                 pass  # 略称が見つからない場合はスキップ
         
         return entry
+    
+    def _remove_trailing_parentheses(self, text: str) -> str:
+        """文字列の末尾のカッコ部分を除去"""
+        import re
+        # 末尾の (xxx) または （xxx） を除去
+        text = re.sub(r'\s*[\(（][^\)）]*[\)）]\s*$', '', text)
+        return text.strip()
