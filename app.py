@@ -58,6 +58,7 @@ def on_mention(event: Any, say: Any, client: Any) -> None:
         logging.shutdown()
         os._exit(1)
     except Exception as e:
+        logging.error("Mention handler 予期しないエラー: %s", e, exc_info=True)
         safe_say(say, f"{e.__class__.__name__} 予期しないエラーが発生しました: {e}")
 
 

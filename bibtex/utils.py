@@ -21,12 +21,12 @@ def normalize_title(raw_title: str) -> str:
 
 
 
+# def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
+#     conf = _get_short_conference_name(long_booktitle, warning_callback)
+#     return f"Proc. of {conf}" if conf else ""
+
+
 def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
-    conf = _get_short_conference_name(long_booktitle, warning_callback)
-    return f"Proc. of {conf}" if conf else ""
-
-
-def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[str], None] | None = None) -> str:
     if not long_booktitle:
         return ""
 
@@ -54,8 +54,8 @@ def _get_short_conference_name(long_booktitle: str, warning_callback: Callable[[
 
     # 1. 辞書で探す（部分一致も試みる）
     words = long_booktitle.split()
-    challenge = 4
-    for i in range(min(challenge, len(words))):
+    max_drop = 4
+    for i in range(min(max_drop, len(words))):
         key = " ".join(words[i:])
         value = journal_name_dict.get(key)
         if value is not None:

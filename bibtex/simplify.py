@@ -17,6 +17,7 @@ from .article_parser import ArticleParser
 from .inproceedings_parser import InproceedingsParser
 from .utils import BaseParser, EntryData
 from .middleware.quotestylemiddleware import QuoteStyleMiddleware
+from .middleware.formatter import BibTeXFormatterMiddleware
 
 _SKIP_ENTRY_TYPES = {"comment", "string", "preamble"}
 _ENTRY_PATTERN = re.compile(r"@(?P<type>[A-Za-z]+)\s*{", re.IGNORECASE)
@@ -63,7 +64,7 @@ def _build_parse_stack() -> list[Middleware]:
     return stack
 
 
-def deduplicate_entry(entry: str, duplicate_keys: list[str]) -> str:
+def deduplicate_entry(entry_str: str, duplicate_keys: list[str]) -> str:
     keys = "|".join(map(re.escape, duplicate_keys))
 
     pattern = re.compile(
@@ -71,9 +72,9 @@ def deduplicate_entry(entry: str, duplicate_keys: list[str]) -> str:
         re.IGNORECASE | re.DOTALL,
     )
 
-    matches = list(pattern.finditer(entry))
+    matches = list(pattern.finditer(entry_str))
     if not matches:
-        return entry
+        return entry_str
 
     # key ごとに一番長い value を選ぶ
     best_by_key = {}
@@ -89,27 +90,27 @@ def deduplicate_entry(entry: str, duplicate_keys: list[str]) -> str:
         if key not in best_by_key or len(value) > len(best_by_key[key]):
             best_by_key[key] = value
 
-    # 元の entry から重複フィールドをすべて削除（後ろから）
-    new_entry = entry
+    # 元の entry_str から重複フィールドをすべて削除（後ろから）
+    new_entry_str = entry_str
     for start, end in sorted(spans_to_remove, reverse=True):
-        new_entry = new_entry[:start] + new_entry[end:]
+        new_entry_str = new_entry_str[:start] + new_entry_str[end:]
 
     # 採用したフィールドを 1 回だけ追加（末尾手前）
-    insert_pos = new_entry.rfind("}")
+    insert_pos = new_entry_str.rfind("}")
     if insert_pos == -1:
-        return entry  # 念のため
+        return entry_str  # 念のため
 
     fields_str = ""
     for key, value in best_by_key.items():
         fields_str += f"  {key} = {{{value}}},\n"
 
-    new_entry = (
-        new_entry[:insert_pos]
+    new_entry_str = (
+        new_entry_str[:insert_pos]
         + fields_str
-        + new_entry[insert_pos:]
+        + new_entry_str[insert_pos:]
     )
 
-    return new_entry
+    return new_entry_str
 
 
 def _needs_dedup(block: ParsingFailedBlock) -> bool:
@@ -245,16 +246,23 @@ def simplify_bibtex_entry(
     """
 
     library = _parse_bibtex_entries(raw_bib)
-    first_entry = library.entries[0]
-    for f in first_entry.fields:
-        print(f"{f.key}: {f.value}")
+    # first_entry = library.entries[0]
+    # fields = first_entry.fields
+    # fields.append(bibtexparser.model.Field(key="booktitle", value="This is a note field."))
+    # first_entry.fields = fields
+    # for f in first_entry.fields:
+    #     print(f"{f.key}: {f.value}")
 
 
 
 
     format = BibtexFormat()
     format.trailing_comma = True
-    result = bibtexparser.write_string(library, unparse_stack=[QuoteStyleMiddleware()], bibtex_format=format)
+    result = bibtexparser.write_string(
+        library, 
+        unparse_stack=[BibTeXFormatterMiddleware(), QuoteStyleMiddleware()], 
+        bibtex_format=format
+    )
     return result
 
 

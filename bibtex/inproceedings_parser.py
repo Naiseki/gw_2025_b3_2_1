@@ -1,9 +1,14 @@
 import re
 from typing import Callable
 from .utils import BaseParser, EntryData, normalize_title, build_short_booktitle, format_authors
+from bibtexparser.model import Entry as BibtexEntry
+from bibtexparser.model import Field
 
 
 class InproceedingsParser(BaseParser):
+    def format(self, entry: BibtexEntry, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> list[Field]:
+        pass
+
     def parse(self, entry: EntryData, new_key: str, booktitle_mode: str = "both", warning_callback: Callable[[str], None] | None = None) -> str:
         field_names = [
             ("title", True), 
