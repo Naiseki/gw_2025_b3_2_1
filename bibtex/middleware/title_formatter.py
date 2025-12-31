@@ -1,12 +1,19 @@
 from bibtexparser.model import Entry
 from bibtexparser.middlewares.middleware import BlockMiddleware
-from titlecase import titlecase
+from titlecase import titlecase, set_small_word_list
 import re
 
 
 class TitleFormatterMiddleware(BlockMiddleware):
     """タイトルフィールドにtitlecaseを適用するMiddleware"""
+
+    def __init__(self, *args, **kwargs):
+        """初期化"""
+        super().__init__(*args, **kwargs)
+        new_small_words = r'a|an|and|as|at|but|by|en|for|if|in|of|on|or|the|to|v\.?|via|vs\.?|with'
+        set_small_word_list(new_small_words)
     
+
     def transform_entry(self, entry: Entry, *args, **kwargs) -> Entry:
         """エントリのtitleフィールドを整形する"""
         if "title" in entry.fields_dict:

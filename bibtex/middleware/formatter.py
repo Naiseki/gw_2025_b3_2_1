@@ -28,8 +28,10 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
     def transform_entry(self, entry: Entry, *args, **kwargs) -> Entry:
         """エントリを整形する"""
         # arXivの場合、journalフィールドをeprintから作成
-        if self._is_arxiv(entry):
+        is_arxiv = self._is_arxiv(entry)
+        if is_arxiv:
             entry = self._create_arxiv_journal(entry)
+            entry.entry_type = "article"
         
         # URLがない場合、DOIからURLを作成
         entry = self._create_url_from_doi(entry)
@@ -37,7 +39,6 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         # URLの整形
         entry = self._clean_url(entry)
 
-        is_arxiv = self._is_arxiv(entry)
         # フィールドの順序整理
         if is_arxiv:
             entry = self._reorder_fields(entry, self.ARXIV_ORDER)
@@ -51,19 +52,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             entry = self._add_abbreviated_fields(entry)
         
         return entry
-    
-    def _get_first_author(self, entry: Entry) -> str:
-        """最初の著者の姓を取得"""
-        if "author" not in entry.fields_dict:
-            return "Author"
-        
-        author_text = entry.fields_dict["author"].value
-        # 最初の著者の姓を抽出（簡易実装）
-        first_author = author_text.split(" and ")[0].strip()
-        # 姓を取得（最後の単語を姓とみなす）
-        lastname = first_author.split()[-1].replace(",", "").replace("{", "").replace("}", "")
-        return lastname
-    
+
     def _is_arxiv(self, entry: Entry) -> bool:
         """arXiv論文かどうか判定"""
         return (prefix := entry.fields_dict.get("archiveprefix")) and prefix.value == "arXiv"
