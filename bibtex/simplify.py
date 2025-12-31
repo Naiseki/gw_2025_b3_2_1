@@ -104,8 +104,6 @@ def _parse_bibtex_entries(raw_bib: str) -> Library:
     for block in library.failed_blocks:
         if _needs_dedup(block):
             modified_entry = deduplicate_entry(block.raw, block.duplicate_keys)
-            print("重複フィールドを解消したエントリを再解析中...")
-            print("modified_entry:", modified_entry)
             modified_library = bibtexparser.parse_string(modified_entry, parse_stack=parse_stack)
             library.add(modified_library.entries)
 
@@ -140,7 +138,7 @@ def simplify_bibtex_entry(
         library, 
         unparse_stack=[
             TitleFormatterMiddleware(), 
-            BibTeXFormatterMiddleware(abbreviation_mode=booktitle_mode), 
+            BibTeXFormatterMiddleware(abbreviation_mode=booktitle_mode, warning_callback=warning_callback), 
             LatexEncodingMiddleware(enclose_urls=False), 
             QuoteStyleMiddleware()
         ], 

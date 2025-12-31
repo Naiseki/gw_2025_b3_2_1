@@ -1,4 +1,5 @@
 import re
+from typing import Callable
 from bibtexparser.model import Entry
 from bibtexparser.middlewares.middleware import BlockMiddleware
 from bibtexparser.model import Field
@@ -13,14 +14,16 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
     ARXIV_ORDER = ["title", "author", "journal", "year", "url"]
     INPROCEEDINGS_ORDER = ["title", "author", "booktitle", "pages", "year", "url"]
     
-    def __init__(self, abbreviation_mode: str = "both", *args, **kwargs):
+    def __init__(self, abbreviation_mode: str = "both", warning_callback: Callable[[str], None] | None = None, *args, **kwargs):
         """初期化
         
         Args:
             abbreviation_mode: "short" (略称のみ), "long" (正式名称のみ), "both" (両方、略称を先に)
+            warning_callback: 警告メッセージを通知するコールバック関数
         """
         super().__init__(*args, **kwargs)
         self.abbreviation_mode = abbreviation_mode
+        self.warning_callback = warning_callback
     
     def transform_entry(self, entry: Entry, *args, **kwargs) -> Entry:
         """エントリを整形する"""
@@ -114,7 +117,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         if "journal" in fields_dict:
             long_journal = str(fields_dict["journal"].value)
             try:
-                short_journal = build_short_journal(long_journal)
+                short_journal = build_short_journal(long_journal, warning_callback=self.warning_callback)
                 if short_journal and short_journal != long_journal:
                     # abbreviation_modeに応じて配置を決定
                     new_fields = []
@@ -136,7 +139,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             # 末尾のカッコ部分を除去（例: (TSAR-2022)）
             long_booktitle = self._remove_trailing_parentheses(long_booktitle)
             try:
-                short_booktitle = build_short_booktitle(long_booktitle)
+                short_booktitle = build_short_booktitle(long_booktitle, warning_callback=self.warning_callback)
                 if short_booktitle and short_booktitle != long_booktitle:
                     # abbreviation_modeに応じて配置を決定
                     new_fields = []

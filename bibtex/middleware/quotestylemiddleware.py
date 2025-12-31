@@ -16,14 +16,14 @@ class QuoteStyleMiddleware(BlockMiddleware):
             raw_val = str(field.value)
 
             if key == "title":
-                # Double curly braces
+                # {{TITLE_VALUE}}
                 quoted = f"{{{{{raw_val}}}}}"
+            elif key == "pages":
+                val = raw_val.replace(r"{\textendash}", "--")
+                quoted = f'"{val}"'
             else:
-                # Standard double quotes
-                # Escape any existing quotes if needed
-                # (simple replace; for more robust BibTeX escaping, adjust as needed)
-                safe_val = raw_val.replace('"', '\\"')
-                quoted = f"\"{safe_val}\""
+                # "VALUE"
+                quoted = f'"{raw_val}"'
 
             # Overwrite field value for writing
             field.value = quoted
