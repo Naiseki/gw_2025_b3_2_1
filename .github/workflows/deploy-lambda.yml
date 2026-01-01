@@ -39,6 +39,8 @@ jobs:
           uv pip install \
             --system \
             --target package \
+            .
+
 
           # アプリコード
           cp lambda_function.py package/
