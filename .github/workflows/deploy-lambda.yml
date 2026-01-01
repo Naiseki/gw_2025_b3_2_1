@@ -75,5 +75,5 @@ jobs:
       - name: Deploy to Lambda
         run: |
           aws lambda update-function-code \
-            --function-name bib-bot-function \
+            --function-name bib_bot-function \
             --zip-file fileb://deployment_package.zip
