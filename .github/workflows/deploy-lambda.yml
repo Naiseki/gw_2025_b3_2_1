@@ -36,10 +36,14 @@ jobs:
           mkdir package
 
           # 依存関係（uv.lock を使用）
-          uv pip install \
-            --system \
-            --target package \
-            .
+          uv export \
+            --format requirements-txt \
+            --no-dev \
+          | uv pip install \
+              --system \
+              --target ./package \
+              -r -
+
 
 
           # アプリコード
