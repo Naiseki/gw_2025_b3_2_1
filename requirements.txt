@@ -1,0 +1,3 @@
+slack-sdk>=3.19.0
+bibtexparser>=2.0.0b8
+titlecase>=2.4.1
