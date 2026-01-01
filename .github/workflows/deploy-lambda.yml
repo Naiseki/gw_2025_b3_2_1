@@ -1,0 +1,74 @@
+name: Deploy Slack Bot Lambda
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      # 1. リポジトリ取得
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Python（Lambda と同じ系）
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # 3. uv セットアップ
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      # 4. Lambda 用 ZIP をビルド
+      - name: Build Lambda package
+        run: |
+          set -eux
+
+          mkdir package
+
+          # 依存関係（uv.lock を使用）
+          uv pip install \
+            --system \
+            --target package \
+            --no-dev
+
+          # アプリコード
+          cp lambda_function.py package/
+          cp slack_handler.py package/
+          cp load_resource.py package/
+          cp -r bibtex package/
+          cp -r resources package/
+
+          # --- サイズ削減 ---
+          rm -rf package/bin
+          find package -type d -name "__pycache__" -exec rm -rf {} +
+          find package -type f \( -name "*.pyc" -o -name "*.pyo" \) -delete
+          find package -type d -name "*.dist-info" -exec rm -rf {} +
+          rm -rf package/tests package/.pytest_cache || true
+
+          # ZIP 作成（最大圧縮）
+          cd package
+          zip -r -9 ../deployment_package.zip .
+
+      # 5. AWS 認証（OIDC）
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 6. Lambda デプロイ
+      - name: Deploy to Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name bib-bot-function \
+            --zip-file fileb://deployment_package.zip
