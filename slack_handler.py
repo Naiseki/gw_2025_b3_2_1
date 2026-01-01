@@ -1,5 +1,6 @@
 # slack_handler.py
 
+import logging
 from bibtex.simplify import simplify_bibtex_entry
 import re
 
@@ -54,12 +55,12 @@ def handle_message(event, say, client):
     
     # raw_bibを構築
     raw_bib = at_and_after.strip()
-    if not raw_bib:
-        say("有効なBibTeXエントリが見つかりませんでした🥶")
-        return
 
     try:
+        if not raw_bib:
+            raise ValueError("有効なBibTeXエントリが見つかりませんでした🥶\n使い方の詳細は https://github.com/Naiseki/gw_2025_b3_2_1/blob/main/README.md をご覧下さい")
         simplified = simplify_bibtex_entry(raw_bib, booktitle_mode=booktitle_mode, warning_callback=say)
         say(f"```{simplified}```")
     except ValueError as e:
         say(f"{e.__class__.__name__} {str(e)}")
+        logging.warning("BibTeX 整形に失敗しました: %s", str(e))

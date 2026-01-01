@@ -3,16 +3,15 @@ from bibtexparser.model import Entry
 
 class QuoteStyleMiddleware(BlockMiddleware):
     """
-    Write all fields as key=\"value\" except `title`
-    which is written as key={{value}}.
+    すべてのフィールドを key="value" の形式で書き込むが、`title` は key={{value}} の形式で書き込む。
     """
 
     def transform_entry(self, entry: Entry, *args, **kwargs) -> Entry:
-        # Rewrite all field values according to rules
+        # ルールに従ってすべてのフィールド値を書き換える
         for field in entry.fields:
             key = field.key.lower()
 
-            # Grab the raw text of the value
+            # 値の生テキストを取得
             raw_val = str(field.value)
 
             if key == "title":
@@ -25,7 +24,7 @@ class QuoteStyleMiddleware(BlockMiddleware):
                 # "VALUE"
                 quoted = f'"{raw_val}"'
 
-            # Overwrite field value for writing
+            # 書き込みのためにフィールド値を上書き
             field.value = quoted
 
         return entry

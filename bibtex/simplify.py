@@ -107,10 +107,10 @@ def _parse_bibtex_entries(raw_bib: str) -> Library:
             modified_library = bibtexparser.parse_string(modified_entry, parse_stack=parse_stack)
             library.add(modified_library.entries)
 
-    library.remove(library.failed_blocks)
-
     if not library.entries:
-        raise ValueError("有効なBibTeXエントリが見つかりません🥶")
+        raise ValueError("BibTeXの解析に失敗しました🥶\n失敗したブロック\n\n" + "\n\n".join(block.raw for block in library.failed_blocks))
+
+    library.remove(library.failed_blocks)
 
     return library
 
