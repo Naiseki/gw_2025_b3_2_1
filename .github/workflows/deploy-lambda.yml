@@ -1,9 +1,8 @@
 name: Deploy Slack Bot Lambda
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+
 
 jobs:
   deploy:
@@ -33,7 +32,9 @@ jobs:
         run: |
           set -eux
 
-          mkdir package
+          # package ディレクトリ作成
+          rm -rf package
+          mkdir -p package
 
           # 依存関係（uv.lock を使用）
           uv export \
@@ -43,8 +44,6 @@ jobs:
               --system \
               --target ./package \
               -r -
-
-
 
           # アプリコード
           cp lambda_function.py package/
@@ -75,5 +74,5 @@ jobs:
       - name: Deploy to Lambda
         run: |
           aws lambda update-function-code \
-            --function-name bib_bot-function \
+            --function-name bib_bot-main \
             --zip-file fileb://deployment_package.zip
