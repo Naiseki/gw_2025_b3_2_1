@@ -40,7 +40,7 @@
 
 ### 2.1 Lambda 関数の作成
 
-* 関数名: `bib_bot-function`
+* 関数名: `bib_bot-main`
 * ランタイム: **Python 3.13**
 * アーキテクチャ: `x86_64`
 
@@ -73,7 +73,7 @@ OIDC を使用した IAM ロールを作成します。
     "lambda:UpdateFunctionCode",
     "lambda:UpdateFunctionConfiguration"
   ],
-  "Resource": "arn:aws:lambda:ap-northeast-1:*:function:bib_bot-function"
+  "Resource": "arn:aws:lambda:ap-northeast-1:*:function:bib_bot-main"
 }
 ```
 
