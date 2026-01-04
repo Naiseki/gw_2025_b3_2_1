@@ -69,6 +69,34 @@ BibTeXの前にオプションをつけることで，論文誌/国際会議名�
     abstract = "..."
 }
 ```
+
+### 一括整形
+複数のBibTeXエントリを一括で送信して、整形できます。
+
+例:
+```bash
+@inproceedings{...,
+    title = "...",
+    author = "...",
+    booktitle = "...",
+    year = "2020",
+    publisher = "...",
+    url = "https://...",
+    pages = "100--110",
+    abstract = "..."
+}
+
+@misc{...,
+      title={...}, 
+      author={...},
+      year={2023},
+      eprint={...},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/...}, 
+}
+```
+
 # ワークスペースにボットをインストール
 ## 1. Slack API 管理画面へアクセス
 
@@ -92,7 +120,7 @@ BibTeXの前にオプションをつけることで，論文誌/国際会議名�
 | `im:history` | DM のメッセージ履歴の読み取り |
 | `users:read` | ユーザー情報の読み取り |
 
-    ※ 必要に応じて今後追加・変更できます。
+> ※ 必要に応じて今後追加・変更できます。
 
 ## 3. App の表示名・ユーザー名を設定
 
@@ -287,7 +315,7 @@ Slack Developer Console ([https://api.slack.com/apps](https://api.slack.com/apps
 - Verified と表示されればOK (Lambdaが正しくChallengeを返している)。
 - 変更があった場合は「Reinstall to Workspace」を実行。
 
-## 6. 動作確認
+## 10. 動作確認
 
 Slack上でボットに対してメンションを送るか、DMを送信して動作を確認してください。
 
