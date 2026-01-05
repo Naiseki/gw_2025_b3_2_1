@@ -14,7 +14,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bibtexparser-fork", path = "dist/bibtexparser_fork-2.0.0b8-py3-none-any.whl" },
+    { name = "bibtexparser-fork", path = "lib/bibtexparser_fork-2.0.0b8-py3-none-any.whl" },
     { name = "slack-bolt", specifier = ">=1.27.0" },
     { name = "titlecase", specifier = ">=2.4.1" },
 ]
@@ -22,7 +22,7 @@ requires-dist = [
 [[package]]
 name = "bibtexparser-fork"
 version = "2.0.0b8"
-source = { path = "dist/bibtexparser_fork-2.0.0b8-py3-none-any.whl" }
+source = { path = "lib/bibtexparser_fork-2.0.0b8-py3-none-any.whl" }
 dependencies = [
     { name = "pylatexenc" },
 ]

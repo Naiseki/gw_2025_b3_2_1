@@ -11,4 +11,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-bibtexparser-fork = { path = "dist/bibtexparser_fork-2.0.0b8-py3-none-any.whl" }
+bibtexparser-fork = { path = "lib/bibtexparser_fork-2.0.0b8-py3-none-any.whl" }

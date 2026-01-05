@@ -54,15 +54,35 @@ jobs:
       - name: Build Lambda package
         run: |
           set -eux
+
+          # package ディレクトリ作成
           rm -rf package
           mkdir -p package
-          uv export --format requirements-txt --no-dev | uv pip install --system --target ./package -r -
+
+          # 依存関係（uv.lock を使用）
+          uv export \
+            --format requirements-txt \
+            --no-dev \
+          | uv pip install \
+              --system \
+              --target ./package \
+              -r -
+
+          # アプリコード
           cp lambda_function.py package/
           cp slack_handler.py package/
           cp load_resource.py package/
           cp -r bibtex package/
           cp -r resources package/
+
+          # --- サイズ削減 ---
+          rm -rf package/bin
           find package -type d -name "__pycache__" -exec rm -rf {} +
+          find package -type f \( -name "*.pyc" -o -name "*.pyo" \) -delete
+          find package -type d -name "*.dist-info" -exec rm -rf {} +
+          rm -rf package/tests package/.pytest_cache || true
+
+          # ZIP 作成（最大圧縮）
           cd package
           zip -r -9 ../deployment_package.zip .
 
