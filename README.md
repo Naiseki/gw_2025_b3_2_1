@@ -278,7 +278,8 @@ GitHub 側でデプロイに必要な値を設定します：
 | Secret 名 | 内容 |
 | ---------------------------- | -------------------------------- |
 | `AWS_REGION` | Lambda のリージョン（例: ap-northeast-1） |
-| `AWS_ROLE_TO_ASSUME` | Step 5 で作成したロールの ARN |
+| `AWS_ROLE_PROD` | Step 5 で作成したロールの ARN（本番用） |
+| `AWS_ROLE_TEST` | Step 5 で作成したロールの ARN（テスト用）|
 
 ## 8. GitHub Actions Workflow を修正
 
