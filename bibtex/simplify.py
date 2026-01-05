@@ -30,7 +30,7 @@ def _build_parse_stack() -> list[Middleware]:
 def _parse_bibtex_entries(raw_bib: str) -> Library:
     """BibTeXエントリをパースしてLibraryオブジェクトを返す。"""
     parse_stack = _build_parse_stack()
-    library = bibtexparser.parse_string(raw_bib, parse_stack=parse_stack, allow_failed_blocks=True)
+    library = bibtexparser.parse_string(raw_bib, parse_stack=parse_stack, allow_duplicate_fields=True)
 
     if not library.entries:
         raise ValueError("BibTeXの解析に失敗しました🥶\n失敗したブロック\n\n" + "\n\n".join(block.raw for block in library.failed_blocks))
