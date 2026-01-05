@@ -2,7 +2,12 @@ name: Deploy Slack Bot Lambda
 
 on:
   workflow_dispatch:
-
+    inputs:
+      function_name:
+        description: 'デプロイ先のLambda関数名を入力してね'
+        required: true
+        default: 'bib_bot-function'
+        type: string
 
 jobs:
   deploy:
@@ -74,5 +79,5 @@ jobs:
       - name: Deploy to Lambda
         run: |
           aws lambda update-function-code \
-            --function-name bib_bot-main \
+            --function-name ${{ github.event.inputs.function_name }} \
             --zip-file fileb://deployment_package.zip
