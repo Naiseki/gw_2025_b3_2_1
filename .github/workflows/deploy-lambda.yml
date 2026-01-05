@@ -2,7 +2,20 @@ name: Deploy Slack Bot Lambda
 
 on:
   workflow_dispatch:
-
+    inputs:
+      environment:
+        description: 'デプロイ先を選択してね'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+          - prod
+          - test
+      function_name:
+        description: 'Lambda関数名'
+        required: true
+        default: 'bib_bot-function'
+        type: string
 
 jobs:
   deploy:
@@ -17,17 +30,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Python（Lambda と同じ系）
+      # 2. ロールの切り替えロジック
+      # 入力に応じて使うロールARNを環境変数に入れるよ
+      - name: Set AWS Role ARN
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
+            echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
+          else
+            echo "AWS_ROLE=${{ secrets.AWS_ROLE_TEST }}" >> $GITHUB_ENV
+          fi
+
+      # 3. Python セットアップ
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
-      # 3. uv セットアップ
+      # 4. uv セットアップ
       - name: Set up uv
         uses: astral-sh/setup-uv@v3
 
-      # 4. Lambda 用 ZIP をビルド
+      # 5. Lambda 用 ZIP をビルド
       - name: Build Lambda package
         run: |
           set -eux
@@ -63,16 +86,16 @@ jobs:
           cd package
           zip -r -9 ../deployment_package.zip .
 
-      # 5. AWS 認証（OIDC）
+      # 6. AWS 認証（ステップ2で決めたロールを使うよ）
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ env.AWS_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 6. Lambda デプロイ
+      # 7. Lambda デプロイ
       - name: Deploy to Lambda
         run: |
           aws lambda update-function-code \
-            --function-name bib_bot-main \
+            --function-name ${{ github.event.inputs.function_name }} \
             --zip-file fileb://deployment_package.zip

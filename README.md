@@ -278,27 +278,13 @@ GitHub 側でデプロイに必要な値を設定します：
 | Secret 名 | 内容 |
 | ---------------------------- | -------------------------------- |
 | `AWS_REGION` | Lambda のリージョン（例: ap-northeast-1） |
-| `AWS_ROLE_TO_ASSUME` | Step 5 で作成したロールの ARN |
+| `AWS_ROLE_PROD` | Step 5 で作成したロールの ARN（本番用） |
+| `AWS_ROLE_TEST` | Step 5 で作成したロールの ARN（テスト用）|
 
-## 8. GitHub Actions Workflow を修正
-
-`.github/workflows/deploy-lambda.yml` を修正
-`--function-name` を Step 2 で作成した関数名に変更
-
-```yaml
-# 6. Lambda デプロイ
-- name: Deploy to Lambda
-  run: |
-    aws lambda update-function-code \
-      --function-name bib_bot-fn \
-      --zip-file fileb://deployment_package.zip
-```
-
-## 9. Slack Appの設定変更
+## 8. Slack Appの設定変更
 
 Slack Developer Console ([https://api.slack.com/apps](https://api.slack.com/apps)) で設定を変更します。
 
-  
 
 1. 対象のアプリを選択。
 
@@ -315,7 +301,7 @@ Slack Developer Console ([https://api.slack.com/apps](https://api.slack.com/apps
 - Verified と表示されればOK (Lambdaが正しくChallengeを返している)。
 - 変更があった場合は「Reinstall to Workspace」を実行。
 
-## 10. 動作確認
+## 9. 動作確認
 
 Slack上でボットに対してメンションを送るか、DMを送信して動作を確認してください。
 

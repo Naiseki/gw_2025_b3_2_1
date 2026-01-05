@@ -1,11 +1,14 @@
 [project]
 name = "bib_bot"
 version = "1.0.1"
-description = "Add your description here"
+description = "BibTeXを整形するSlack Bot"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "bibtexparser>=2.0.0b8",
+    "bibtexparser-fork",
     "slack-bolt>=1.27.0",
     "titlecase>=2.4.1",
 ]
+
+[tool.uv.sources]
+bibtexparser-fork = { path = "lib/bibtexparser_fork-2.0.0b8-py3-none-any.whl" }
