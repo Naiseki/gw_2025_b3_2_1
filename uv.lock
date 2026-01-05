@@ -7,29 +7,39 @@ name = "bib-bot"
 version = "1.0.1"
 source = { virtual = "." }
 dependencies = [
-    { name = "bibtexparser" },
+    { name = "bibtexparser-fork" },
     { name = "slack-bolt" },
     { name = "titlecase" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "bibtexparser", specifier = ">=2.0.0b8" },
+    { name = "bibtexparser-fork", path = "dist/bibtexparser_fork-2.0.0b8-py3-none-any.whl" },
     { name = "slack-bolt", specifier = ">=1.27.0" },
     { name = "titlecase", specifier = ">=2.4.1" },
 ]
 
 [[package]]
-name = "bibtexparser"
+name = "bibtexparser-fork"
 version = "2.0.0b8"
-source = { registry = "https://pypi.org/simple" }
+source = { path = "dist/bibtexparser_fork-2.0.0b8-py3-none-any.whl" }
 dependencies = [
     { name = "pylatexenc" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/b6/967e030d0f8359b912a64ce7447db485064862a4d3980cac07b398bc95be/bibtexparser-2.0.0b8.tar.gz", hash = "sha256:11eaaa1fe80154f70092e91fa7e3fed5e5c81021f6c6c09151e36b8533f36994", size = 37746, upload-time = "2024-12-04T20:17:42.177Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/4e/226cfbf6c61c38399fc19e5f46db755ffea32f77ef078982c953031c8a3c/bibtexparser-2.0.0b8-py3-none-any.whl", hash = "sha256:eda1e6dbc7bbc040d351c926ead97a36f4734858656f3514a933259878bd37f1", size = 39642, upload-time = "2024-12-04T20:17:40.736Z" },
+    { filename = "bibtexparser_fork-2.0.0b8-py3-none-any.whl", hash = "sha256:c4c8253657ab04c3b48b8d7578c66d944b37f99c05d15333ff3ca842145b68ee" },
 ]
+
+[package.metadata]
+requires-dist = [
+    { name = "jupyter", marker = "extra == 'test'" },
+    { name = "pylatexenc", specifier = ">=2.10" },
+    { name = "pytest", marker = "extra == 'test'" },
+    { name = "pytest-cov", marker = "extra == 'test'" },
+    { name = "pytest-xdist", marker = "extra == 'test'" },
+    { name = "sphinx", marker = "extra == 'docs'" },
+]
+provides-extras = ["docs", "test"]
 
 [[package]]
 name = "pylatexenc"
