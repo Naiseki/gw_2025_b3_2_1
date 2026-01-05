@@ -27,7 +27,7 @@ dependencies = [
     { name = "pylatexenc" },
 ]
 wheels = [
-    { filename = "bibtexparser_fork-2.0.0b8-py3-none-any.whl", hash = "sha256:c4c8253657ab04c3b48b8d7578c66d944b37f99c05d15333ff3ca842145b68ee" },
+    { filename = "bibtexparser_fork-2.0.0b8-py3-none-any.whl", hash = "sha256:470dc79b8e0c7386e1a96560a7ae16a5dd9d00edd8d498b9107702d1da5ea16b" },
 ]
 
 [package.metadata]
