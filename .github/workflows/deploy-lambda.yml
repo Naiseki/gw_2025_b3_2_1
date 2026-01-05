@@ -3,8 +3,16 @@ name: Deploy Slack Bot Lambda
 on:
   workflow_dispatch:
     inputs:
+      environment:
+        description: 'デプロイ先を選択してね'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+          - prod
+          - test
       function_name:
-        description: 'デプロイ先のLambda関数名を入力してね'
+        description: 'Lambda関数名'
         required: true
         default: 'bib_bot-function'
         type: string
@@ -22,60 +30,50 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Python（Lambda と同じ系）
+      # 2. ロールの切り替えロジック
+      # 入力に応じて使うロールARNを環境変数に入れるよ
+      - name: Set AWS Role ARN
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
+            echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
+          else
+            echo "AWS_ROLE=${{ secrets.AWS_ROLE_TEST }}" >> $GITHUB_ENV
+          fi
+
+      # 3. Python セットアップ
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
-      # 3. uv セットアップ
+      # 4. uv セットアップ
       - name: Set up uv
         uses: astral-sh/setup-uv@v3
 
-      # 4. Lambda 用 ZIP をビルド
+      # 5. Lambda 用 ZIP をビルド
       - name: Build Lambda package
         run: |
           set -eux
-
-          # package ディレクトリ作成
           rm -rf package
           mkdir -p package
-
-          # 依存関係（uv.lock を使用）
-          uv export \
-            --format requirements-txt \
-            --no-dev \
-          | uv pip install \
-              --system \
-              --target ./package \
-              -r -
-
-          # アプリコード
+          uv export --format requirements-txt --no-dev | uv pip install --system --target ./package -r -
           cp lambda_function.py package/
           cp slack_handler.py package/
           cp load_resource.py package/
           cp -r bibtex package/
           cp -r resources package/
-
-          # --- サイズ削減 ---
-          rm -rf package/bin
           find package -type d -name "__pycache__" -exec rm -rf {} +
-          find package -type f \( -name "*.pyc" -o -name "*.pyo" \) -delete
-          find package -type d -name "*.dist-info" -exec rm -rf {} +
-          rm -rf package/tests package/.pytest_cache || true
-
-          # ZIP 作成（最大圧縮）
           cd package
           zip -r -9 ../deployment_package.zip .
 
-      # 5. AWS 認証（OIDC）
+      # 6. AWS 認証（ステップ2で決めたロールを使うよ）
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ env.AWS_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 6. Lambda デプロイ
+      # 7. Lambda デプロイ
       - name: Deploy to Lambda
         run: |
           aws lambda update-function-code \
