@@ -97,22 +97,21 @@ def lambda_handler(event, context):
         logger.info(f"イベント受信: {event_type}, ユーザー: {user}, チャンネル: {channel}")
         
         if event_type in ["app_mention", "message"]:
-            try:
-                # say関数の定義
-                def say(text, **kwargs):
+            # メッセージ送信関数の定義
+            def say(text, **kwargs):
+                try: 
                     if not channel or channel == "unknown":
                         logger.warning("イベントにチャンネルIDが見つかりません。")
                         return
-                    client.chat_postMessage(
-                        channel=channel,
-                        text=text,
-                        **kwargs
-                    )
-                
+                    client.chat_postMessage(channel=channel, text=text, **kwargs)
+                except Exception as e:
+                    logger.error(f"メッセージ送信エラー: {e}", exc_info=True)
+
+            try:
                 # メッセージ処理の呼び出し
                 handle_message(inner_event, say, client)
-                
             except Exception as e:
+                say(f"{e.__class__.__name__} エラーが発生しました😢")
                 logger.error(f"handle_messageでエラー: {e}", exc_info=True)
                 return {"statusCode": 200, "body": "OK"}
     
