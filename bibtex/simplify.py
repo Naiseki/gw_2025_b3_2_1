@@ -23,7 +23,7 @@ def _build_parse_stack() -> list[Middleware]:
     """パーススタックを構築する。"""
     stack: list[Middleware] = default_parse_stack(allow_inplace_modification=True)
     stack.append(NormalizeFieldKeys())
-    stack.append(LatexDecodingMiddleware())
+    # stack.append(LatexDecodingMiddleware())
     return stack
 
 
@@ -57,12 +57,14 @@ def simplify_bibtex_entry(
     library = _parse_bibtex_entries(raw_bib)
     format = BibtexFormat()
     format.trailing_comma = True
+    format.block_separator = "\n"
+    format.indent = "    "
     result = bibtexparser.write_string(
         library, 
         unparse_stack=[
             TitleFormatterMiddleware(), 
             BibTeXFormatterMiddleware(abbreviation_mode=abbreviation_mode, warning_callback=warning_callback), 
-            LatexEncodingMiddleware(enclose_urls=False), 
+            # LatexEncodingMiddleware(enclose_urls=False), 
             QuoteStyleMiddleware()
         ], 
         bibtex_format=format
