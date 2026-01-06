@@ -24,13 +24,13 @@ def parse_options_and_build_raw_bib(text):
     has_short = bool(re.search(short_pattern, before_at))
     has_long = bool(re.search(long_pattern, before_at))
     
-    # booktitle_mode: "short", "long", "both"
+    # abbreviation_mode: "short", "long", "both"
     if has_short:
-        booktitle_mode = "short"
+        abbreviation_mode = "short"
     elif has_long:
-        booktitle_mode = "long"
+        abbreviation_mode = "long"
     else:
-        booktitle_mode = "both"
+        abbreviation_mode = "both"
     
     # オプションを filtered_before_at から削除
     cleaned_before_at = re.sub(short_pattern, r"\1\3", before_at)
@@ -39,7 +39,7 @@ def parse_options_and_build_raw_bib(text):
     # raw_bibを構築 (掃除した before_at を結合)
     raw_bib = (cleaned_before_at + "\n" + at_and_after).strip()
     
-    return booktitle_mode, raw_bib
+    return abbreviation_mode, raw_bib
 
 
 def handle_message(event, say, client):
@@ -70,12 +70,12 @@ def handle_message(event, say, client):
     text = text.strip().strip("`")
 
     # オプション解析とraw_bib構築を関数化
-    booktitle_mode, raw_bib = parse_options_and_build_raw_bib(text)
+    abbreviation_mode, raw_bib = parse_options_and_build_raw_bib(text)
 
     try:
         if not raw_bib:
             raise ValueError("有効なBibTeXエントリが見つかりませんでした🥶\n使い方の詳細は https://github.com/Naiseki/gw_2025_b3_2_1/blob/main/README.md をご覧下さい")
-        simplified = simplify_bibtex_entry(raw_bib, booktitle_mode=booktitle_mode, warning_callback=say)
+        simplified = simplify_bibtex_entry(raw_bib, abbreviation_mode=abbreviation_mode, warning_callback=say)
         say(f"```{simplified}```")
     except ValueError as e:
         say(f"{e.__class__.__name__} {str(e)}")
