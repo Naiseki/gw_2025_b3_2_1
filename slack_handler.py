@@ -73,8 +73,6 @@ def handle_message(event, say, client):
     abbreviation_mode, raw_bib = parse_options_and_build_raw_bib(text)
 
     try:
-        if not raw_bib:
-            raise ValueError("有効なBibTeXエントリが見つかりませんでした🥶\n使い方の詳細は https://github.com/Naiseki/gw_2025_b3_2_1/blob/main/README.md をご覧下さい")
         simplified = simplify_bibtex_entry(raw_bib, abbreviation_mode=abbreviation_mode, warning_callback=say)
         say(f"```{simplified}```")
     except ValueError as e:
