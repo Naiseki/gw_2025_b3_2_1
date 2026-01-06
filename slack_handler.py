@@ -6,6 +6,8 @@ import re
 
 def parse_options_and_build_raw_bib(text):
     """オプションを解析し、raw_bibを構築する。"""
+    text = text.replace("```", "").strip()
+
     before_at, at_and_after = "", ""
     if "@" in text:
         at_index = text.index("@")
@@ -66,8 +68,6 @@ def handle_message(event, say, client):
     # メンションされていたら@idの部分をtextから削除
     if is_mentioned:
         text = re.sub(rf"<@{bot_user_id}>", "", text).strip()
-
-    text = text.strip().strip("`")
 
     # オプション解析とraw_bib構築を関数化
     abbreviation_mode, raw_bib = parse_options_and_build_raw_bib(text)
