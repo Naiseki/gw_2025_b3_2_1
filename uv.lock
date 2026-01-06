@@ -8,14 +8,14 @@ version = "1.0.1"
 source = { virtual = "." }
 dependencies = [
     { name = "bibtexparser-fork" },
-    { name = "slack-bolt" },
+    { name = "slack-sdk" },
     { name = "titlecase" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "bibtexparser-fork", path = "lib/bibtexparser_fork-2.0.0b8-py3-none-any.whl" },
-    { name = "slack-bolt", specifier = ">=1.27.0" },
+    { name = "slack-sdk", specifier = ">=3.39.0" },
     { name = "titlecase", specifier = ">=2.4.1" },
 ]
 
@@ -46,18 +46,6 @@ name = "pylatexenc"
 version = "2.10"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5d/ab/34ec41718af73c00119d0351b7a2531d2ebddb51833a36448fc7b862be60/pylatexenc-2.10.tar.gz", hash = "sha256:3dd8fd84eb46dc30bee1e23eaab8d8fb5a7f507347b23e5f38ad9675c84f40d3", size = 162597, upload-time = "2021-04-06T07:56:07.854Z" }
-
-[[package]]
-name = "slack-bolt"
-version = "1.27.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "slack-sdk" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/4c/28/50ed0b86e48b48e6ddcc71de93b91c8ac14a55d1249e4bff0586494a2f90/slack_bolt-1.27.0.tar.gz", hash = "sha256:3db91d64e277e176a565c574ae82748aa8554f19e41a4fceadca4d65374ce1e0", size = 129101, upload-time = "2025-11-13T20:17:46.878Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/a8/1acb355759747ba4da5f45c1a33d641994b9e04b914908c9434f18bd97e8/slack_bolt-1.27.0-py2.py3-none-any.whl", hash = "sha256:c43c94bf34740f2adeb9b55566c83f1e73fed6ba2878bd346cdfd6fd8ad22360", size = 230428, upload-time = "2025-11-13T20:17:45.465Z" },
-]
 
 [[package]]
 name = "slack-sdk"

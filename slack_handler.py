@@ -4,6 +4,44 @@ import logging
 from bibtex.simplify import simplify_bibtex_entry
 import re
 
+def parse_options_and_build_raw_bib(text):
+    """オプションを解析し、raw_bibを構築する。"""
+    before_at, at_and_after = "", ""
+    if "@" in text:
+        at_index = text.index("@")
+        before_at = text[:at_index]
+        at_and_after = text[at_index:]
+    else:
+        before_at = text
+        at_and_after = ""
+
+    
+    # オプション解析: -s で短縮形、-l で正式名称、何もなしで両方表示
+    # オプションは @の前に書かないといけない
+    short_pattern = r"(^|\s)(-s|--short)(\s|$)"
+    long_pattern = r"(^|\s)(-l|--long)(\s|$)"
+
+    has_short = bool(re.search(short_pattern, before_at))
+    has_long = bool(re.search(long_pattern, before_at))
+    
+    # abbreviation_mode: "short", "long", "both"
+    if has_short:
+        abbreviation_mode = "short"
+    elif has_long:
+        abbreviation_mode = "long"
+    else:
+        abbreviation_mode = "both"
+    
+    # オプションを filtered_before_at から削除
+    cleaned_before_at = re.sub(short_pattern, r"\1\3", before_at)
+    cleaned_before_at = re.sub(long_pattern, r"\1\3", cleaned_before_at).strip()
+
+    # raw_bibを構築 (掃除した before_at を結合)
+    raw_bib = (cleaned_before_at + "\n" + at_and_after).strip()
+    
+    return abbreviation_mode, raw_bib
+
+
 def handle_message(event, say, client):
     """DM またはメンションされたメッセージを BibTeX 変換。"""
 
@@ -31,35 +69,13 @@ def handle_message(event, say, client):
 
     text = text.strip().strip("`")
 
-    # オプション解析: -s で短縮形、-l で正式名称、何もなしで両方表示
-    # オプションは @の前に書かないといけない
-    before_at, at_and_after = "", ""
-    if "@" in text:
-        at_index = text.index("@")
-        before_at = text[:at_index]
-        at_and_after = text[at_index:]
-    else:
-        before_at = text
-        at_and_after = ""
-
-    has_short = bool(re.search(r'(^|\s)-s(\s|$)', before_at) or re.search(r'(^|\s)--short(\s|$)', before_at))
-    has_long = bool(re.search(r'(^|\s)-l(\s|$)', before_at) or re.search(r'(^|\s)--long(\s|$)', before_at))
-    
-    # booktitle_mode: "short", "long", "both"
-    if has_short:
-        booktitle_mode = "short"
-    elif has_long:
-        booktitle_mode = "long"
-    else:
-        booktitle_mode = "both"
-    
-    # raw_bibを構築
-    raw_bib = at_and_after.strip()
+    # オプション解析とraw_bib構築を関数化
+    abbreviation_mode, raw_bib = parse_options_and_build_raw_bib(text)
 
     try:
         if not raw_bib:
             raise ValueError("有効なBibTeXエントリが見つかりませんでした🥶\n使い方の詳細は https://github.com/Naiseki/gw_2025_b3_2_1/blob/main/README.md をご覧下さい")
-        simplified = simplify_bibtex_entry(raw_bib, booktitle_mode=booktitle_mode, warning_callback=say)
+        simplified = simplify_bibtex_entry(raw_bib, abbreviation_mode=abbreviation_mode, warning_callback=say)
         say(f"```{simplified}```")
     except ValueError as e:
         say(f"{e.__class__.__name__} {str(e)}")

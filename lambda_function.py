@@ -103,6 +103,15 @@ def lambda_handler(event, context):
                     if not channel or channel == "unknown":
                         logger.warning("イベントにチャンネルIDが見つかりません。")
                         return
+
+                    # チャンネルの場合はスレッド返信、DMの場合は通常送信
+                    is_dm = channel.startswith("D")
+                    thread_ts = inner_event.get("ts") if not is_dm else None
+                    
+                    # チャンネルの場合はスレッドに返信する
+                    if thread_ts and "thread_ts" not in kwargs:
+                        kwargs["thread_ts"] = thread_ts
+
                     client.chat_postMessage(channel=channel, text=text, **kwargs)
                 except Exception as e:
                     logger.error(f"メッセージ送信エラー: {e}", exc_info=True)
