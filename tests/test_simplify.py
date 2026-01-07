@@ -11,7 +11,7 @@ def test_simplify_bibtex_entry():
 }
 
 
-% GloVe
+% GloVeこの右側にスペースが入っている                         
 @inproceedings{pennington-2014-glove,
     title = "GloVe: Global Vectors for Word Representation",
     author = "Pennington, Jeffrey  and  Socher, Richard  and  Manning, Christopher",
@@ -41,7 +41,7 @@ def test_simplify_bibtex_entry():
 
 
 
-% このコメントは関係ない
+% このコメントはくっついてない
 
 
 
@@ -59,6 +59,7 @@ def test_simplify_bibtex_entry():
 
 
 
+%このコメントは下にくっついている
 % fastText
 @article{bojanowski-2017-fasttext,
     title = {{Enriching Word Vectors with Subword Information}},
@@ -69,7 +70,11 @@ def test_simplify_bibtex_entry():
     pages = "135--146",
     year = "2017",
     url = "https://aclanthology.org/Q17-1010/",
-}"""
+}
+このコメントは上にくっついている
+
+
+ このコメントもくっついていない(左にスペースがあります)"""
 
     simplified_bib = simplify_bibtex_entry(raw_bib, abbreviation_mode="both")
     expected_simplified_bib = """% word2vec
@@ -82,7 +87,7 @@ def test_simplify_bibtex_entry():
     url = "https://arxiv.org/abs/1301.3781",
 }
 
-% GloVe
+% GloVeこの右側にスペースが入っている
 @inproceedings{pennington-2014-glove,
     title = {{GloVe: Global Vectors for Word Representation}},
     author = "Pennington, Jeffrey  and  Socher, Richard  and  Manning, Christopher",
@@ -107,8 +112,9 @@ def test_simplify_bibtex_entry():
     url = "https://aclanthology.org/2020.cl-1.4",
 }
 
-% このコメントは関係ない
+% このコメントはくっついてない
 
+%このコメントは下にくっついている
 % fastText
 @article{bojanowski-2017-fasttext,
     title = {{Enriching Word Vectors with Subword Information}},
@@ -120,5 +126,138 @@ def test_simplify_bibtex_entry():
     year = "2017",
     url = "https://aclanthology.org/Q17-1010",
 }
+このコメントは上にくっついている
+
+このコメントもくっついていない(左にスペースがあります)
 """
     assert simplified_bib == expected_simplified_bib
+
+
+def test_simplify_bibtex_entry_short_mode():
+    raw_bib = """ % word2vec
+@inproceedings{mikolov-2013-word2vec,
+    title = {Efficient Estimation of Word Representations in Vector Space},
+
+    author = "Tomas Mikolov and Kai Chen and Greg Corrado and Jeffrey Dean",
+
+
+    booktitle = "Proceedings of the 1st International Conference on Learning Representations",
+    year = "2013",
+    url = "https://arxiv.org/abs/1301.3781",
+}
+
+
+% GloVeこの右側にスペースが入っている                         
+@inproceedings{pennington-2014-glove,
+    title = "GloVe: Global Vectors for Word Representation",
+            author = "Pennington, Jeffrey  and  Socher, Richard  and  Manning, Christopher",
+ booktitle = "Proc. of EMNLP",
+    booktitle = "Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing",
+    pages = "1532--1543",
+    year = "2014",
+    url = "<https://aclanthology.org/D14-1162/|https://aclanthology.org/D14-1162/>",
+}
+@article{alva-manchego-etal-2020-data,
+    title = "Data-Driven Sentence Simplification: Survey and Benchmark",
+    author = "Alva-Manchego, Fernando  and
+      Scarton, Carolina  and
+      Specia, Lucia",
+    journal = "Computational Linguistics",
+    volume = "46",
+    number = "1",
+    year = "2020",
+    address = "Cambridge, MA",
+    publisher = "MIT Press",
+    url = "https://aclanthology.org/2020.cl-1.4/",
+    doi = "10.1162/coli_a_00370",
+    pages = "135--187",
+    abstract = "Sentence Simplification (SS) aims to modify a sentence in order to make it easier to read and understand. In order to do so, several rewriting transformations can be performed such as replacement, reordering, and splitting. Executing these transformations while keeping sentences grammatical, preserving their main idea, and generating simpler output, is a challenging and still far from solved problem. In this article, we survey research on SS, focusing on approaches that attempt to learn how to simplify using corpora of aligned original-simplified sentence pairs in English, which is the dominant paradigm nowadays. We also include a benchmark of different approaches on common data sets so as to compare them and highlight their strengths and limitations. We expect that this survey will serve as a starting point for researchers interested in the task and help spark new ideas for future developments."
+}
+
+
+
+
+% このコメントはくっついてない
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%このコメントは下にくっついている
+% fastText
+@article{bojanowski-2017-fasttext,
+    title = {{Enriching Word Vectors with Subword Information}},
+    author = "Bojanowski, Piotr  and  Grave, Edouard  and  Joulin, Armand  and  Mikolov, Tomas",
+    journal = "TACL",
+    journal = "Transactions of the Association for Computational Linguistics",
+    pages = "135--146",
+    year = "2017",
+    url = "https://aclanthology.org/Q17-1010/",
+}
+このコメントは上にくっついている
+
+
+ このコメントもくっついていない(左にスペースがあります)"""
+
+    expected_simplified_bib = """% word2vec
+@inproceedings{mikolov-2013-word2vec,
+    title = {{Efficient Estimation of Word Representations in Vector Space}},
+    author = "Tomas Mikolov and Kai Chen and Greg Corrado and Jeffrey Dean",
+    booktitle = "Proc. of ICLR",
+    year = "2013",
+    url = "https://arxiv.org/abs/1301.3781",
+}
+
+% GloVeこの右側にスペースが入っている
+@inproceedings{pennington-2014-glove,
+    title = {{GloVe: Global Vectors for Word Representation}},
+    author = "Pennington, Jeffrey  and  Socher, Richard  and  Manning, Christopher",
+    booktitle = "Proc. of EMNLP",
+    pages = "1532--1543",
+    year = "2014",
+    url = "https://aclanthology.org/D14-1162",
+}
+
+@article{alva-manchego-etal-2020-data,
+    title = {{Data-Driven Sentence Simplification: Survey and Benchmark}},
+    author = "Alva-Manchego, Fernando  and
+      Scarton, Carolina  and
+      Specia, Lucia",
+    journal = "CL",
+    volume = "46",
+    number = "1",
+    pages = "135--187",
+    year = "2020",
+    url = "https://aclanthology.org/2020.cl-1.4",
+}
+
+% このコメントはくっついてない
+
+%このコメントは下にくっついている
+% fastText
+@article{bojanowski-2017-fasttext,
+    title = {{Enriching Word Vectors with Subword Information}},
+    author = "Bojanowski, Piotr  and  Grave, Edouard  and  Joulin, Armand  and  Mikolov, Tomas",
+    journal = "TACL",
+    pages = "135--146",
+    year = "2017",
+    url = "https://aclanthology.org/Q17-1010",
+}
+このコメントは上にくっついている
+
+このコメントもくっついていない(左にスペースがあります)
+"""
+    simplified_bib_short = simplify_bibtex_entry(raw_bib, abbreviation_mode="short")
+    assert simplified_bib_short == expected_simplified_bib

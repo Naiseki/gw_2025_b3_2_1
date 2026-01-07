@@ -37,10 +37,10 @@ def parse_options_and_extract_bib(text):
     
     # オプションを filtered_before_at から削除
     cleaned_before_at = re.sub(short_pattern, r"\1\3", before_at)
-    cleaned_before_at = re.sub(long_pattern, r"\1\3", cleaned_before_at).strip()
+    cleaned_before_at = re.sub(long_pattern, r"\1\3", cleaned_before_at)
 
     # raw_bibを構築 (掃除した before_at を結合)
-    raw_bib = (cleaned_before_at + "\n" + at_and_after).strip()
+    raw_bib = (cleaned_before_at + at_and_after).strip()
     
     return abbreviation_mode, raw_bib
 

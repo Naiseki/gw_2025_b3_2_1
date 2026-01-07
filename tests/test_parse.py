@@ -81,7 +81,7 @@ def test_codeblock():
     url = "```https://aclanthology.org/Q17-1010",
 }"""
 
-    expected_raw_bib2 = """% fastText
+    expected_raw_bib2 = """% fastText 
 @article{bojanowski-2017-fasttext,
     title = {Enriching Word Vectors with Subword Information},
     author = "Bojanowski`, Piotr``  and  Grave, Edouard  and  Joulin, Armand  and  Mikolov, Tomas",
