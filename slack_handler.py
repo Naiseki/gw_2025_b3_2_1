@@ -6,7 +6,8 @@ import re
 
 def parse_options_and_extract_bib(text):
     """オプションを解析し、raw_bibを構築する。"""
-    text = text.replace("```", "").strip()
+    # コードブロックのバッククォートを削除
+    text = re.sub(r"```(.+?)```", r"\1", text, flags=re.DOTALL)
 
     before_at, at_and_after = "", ""
     if "@" in text:
