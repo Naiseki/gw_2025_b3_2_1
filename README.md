@@ -1,20 +1,25 @@
 # *bib_bot*
 
 # 概要
-Slack上でBibTeXを整形して返すボットです。DMまたはメンションされたメッセージを受け取り、整形した結果を返信します。
+Slack上でBibTeXを綺麗に整形して返信してくれるボットです。
+論文執筆や文献管理を効率化します。
+- **簡単操作**: BibTeXをコピペして送るだけ。
+- **柔軟な出力**: オプション（`-s`, `-l`）で会議名の長さを調整可能。
+- **一括整形**: 複数のエントリも一度に処理。
+
 # 目次
-- [bib_botをインストール済みワークスペースで利用](#bib_botをインストール済みワークスペースで利用)
-- [ワークスペースにボットをインストール](#ワークスペースにボットをインストール)
+- [使い方（利用者向け）](#使い方利用者向け)
+- [Slack Appの作成（開発者向け）](#slack-appの作成開発者向け)
+- [AWSへのデプロイ（開発者向け）](#awsへのデプロイ開発者向け)
 
-- [AWSにデプロイする](#awsにデプロイする)
-
-# bib_botをインストール済みワークスペースで利用
+# 使い方（利用者向け）
+bib_bot をインストール済みワークスペースで利用する方法です。
 ## 導入
 ### DM
-`ホーム` → `App` → `管理する` → `アプリをブラウズする` → `bib_botを追加`
+`ホーム` → `App` → `管理する` → `アプリをブラウズする` → `bib_bot` を検索して追加
 
 ### チャンネル
-`右上三点リーダー` → `チャンネル詳細を開く` → `インテグレーション` → `アプリを追加する` → `bib_botを追加`
+`右上三点リーダー` → `チャンネル詳細を開く` → `インテグレーション` → `アプリを追加する` → `bib_bot` を検索して追加
 ## 使い方
 ACLやarXivなどのサイトからBibTeXをコピペして送信します。
 ### DM
@@ -99,7 +104,8 @@ BibTeXの前にオプションをつけることで，論文誌/国際会議名�
 }
 ```
 
-# ワークスペースにボットをインストール
+# Slack Appの作成（開発者向け）
+ワークスペースにボットをインストールする方法です。
 ## 1. Slack API 管理画面へアクセス
 
 1.  Slack にログインした状態で [https://api.slack.com/apps](https://api.slack.com/apps) にアクセス
@@ -141,7 +147,7 @@ BibTeXの前にオプションをつけることで，論文誌/国際会議名�
 3.  権限画面で内容を確認し **「許可する」** をクリック  
     → インストールが完了し OAuth トークンが発行されます。
 
-# AWSにデプロイする
+# AWSへのデプロイ（開発者向け）
 AWS Lambda + Events API 環境 + GitHub Actions でデプロイする手順です。
 
 ## 1. 事前準備
@@ -265,7 +271,7 @@ Audience: sts.amazonaws.com
         "lambda:UpdateFunctionConfiguration",
         "lambda:GetFunctionConfiguration"
       ],
-      "Resource": "arn:aws:lambda:ap-northeast-1:123:function:bib_bot-fn"
+      "Resource": "arn:aws:lambda:YOUR_REGION:YOUR_ACCOUNT_ID:function:bib_bot-fn"
     }
   ]
 }
@@ -303,7 +309,20 @@ Slack Developer Console ([https://api.slack.com/apps](https://api.slack.com/apps
 - Verified と表示されればOK (Lambdaが正しくChallengeを返している)。
 - 変更があった場合は「Reinstall to Workspace」を実行。
 
-## 9. 動作確認
+## 9. GitHub Actions でデプロイ
+
+このプロジェクトでは、GitHub Actions を使用して手動でスクリプトを実行できます。
+
+### 実行手順
+
+1. GitHub リポジトリのトップページ上部にある **[Actions]** タブをクリックします。
+2. 左側のサイドバーにある **[All workflows]** 一覧から、`Deploy Slack Bot Lambda`を選択します。
+3. 画面右側に表示される青いバーの **[Run workflow]** ボタンをクリックします。
+4. 使用するブランチ、デプロイ先、Lambda関数名を指定し、緑色の **[Run workflow]** ボタンをクリックすると実行が開始されます。
+
+> ※ 実行が開始されると、一覧のトップに新しいジョブが表示されます。クリックすると詳細なログを確認できます。
+
+## 10. 動作確認
 
 Slack上でボットに対してメンションを送るか、DMを送信して動作を確認してください。
 

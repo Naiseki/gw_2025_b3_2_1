@@ -4,9 +4,10 @@ import logging
 from bibtex.simplify import simplify_bibtex_entry
 import re
 
-def parse_options_and_build_raw_bib(text):
+def parse_options_and_extract_bib(text):
     """オプションを解析し、raw_bibを構築する。"""
-    text = text.replace("```", "").strip()
+    # コードブロックのバッククォートを削除
+    text = re.sub(r"```(.+?)```", r"\1", text, flags=re.DOTALL)
 
     before_at, at_and_after = "", ""
     if "@" in text:
@@ -36,10 +37,10 @@ def parse_options_and_build_raw_bib(text):
     
     # オプションを filtered_before_at から削除
     cleaned_before_at = re.sub(short_pattern, r"\1\3", before_at)
-    cleaned_before_at = re.sub(long_pattern, r"\1\3", cleaned_before_at).strip()
+    cleaned_before_at = re.sub(long_pattern, r"\1\3", cleaned_before_at)
 
     # raw_bibを構築 (掃除した before_at を結合)
-    raw_bib = (cleaned_before_at + "\n" + at_and_after).strip()
+    raw_bib = (cleaned_before_at + at_and_after).strip()
     
     return abbreviation_mode, raw_bib
 
@@ -69,11 +70,11 @@ def handle_message(event, say, client):
     if is_mentioned:
         text = re.sub(rf"<@{bot_user_id}>", "", text).strip()
 
-    # オプション解析とraw_bib構築を関数化
-    abbreviation_mode, raw_bib = parse_options_and_build_raw_bib(text)
+    # オプション解析とbib抽出
+    abbreviation_mode, bib = parse_options_and_extract_bib(text)
 
     try:
-        simplified = simplify_bibtex_entry(raw_bib, abbreviation_mode=abbreviation_mode, warning_callback=say)
+        simplified = simplify_bibtex_entry(bib, abbreviation_mode=abbreviation_mode, warning_callback=say)
         say(f"```{simplified}```")
     except ValueError as e:
         say(f"{e.__class__.__name__} {str(e)}")
