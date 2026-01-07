@@ -4,7 +4,7 @@ import logging
 from bibtex.simplify import simplify_bibtex_entry
 import re
 
-def parse_options_and_build_raw_bib(text):
+def parse_options_and_extract_bib(text):
     """オプションを解析し、raw_bibを構築する。"""
     text = text.replace("```", "").strip()
 
@@ -69,11 +69,11 @@ def handle_message(event, say, client):
     if is_mentioned:
         text = re.sub(rf"<@{bot_user_id}>", "", text).strip()
 
-    # オプション解析とraw_bib構築を関数化
-    abbreviation_mode, raw_bib = parse_options_and_build_raw_bib(text)
+    # オプション解析とbib抽出
+    abbreviation_mode, bib = parse_options_and_extract_bib(text)
 
     try:
-        simplified = simplify_bibtex_entry(raw_bib, abbreviation_mode=abbreviation_mode, warning_callback=say)
+        simplified = simplify_bibtex_entry(bib, abbreviation_mode=abbreviation_mode, warning_callback=say)
         say(f"```{simplified}```")
     except ValueError as e:
         say(f"{e.__class__.__name__} {str(e)}")
