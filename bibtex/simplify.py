@@ -30,18 +30,21 @@ def _build_parse_stack() -> list[Middleware]:
     return stack
 
 
-def _parse_bibtex_entries(raw_bib: str) -> Library:
+def _parse_bibtex_entries(raw_bib: str, warning_callback: Callable[[str], None] | None = None) -> Library:
     """BibTeXエントリをパースしてLibraryオブジェクトを返す。"""
     parse_stack = _build_parse_stack()
     library = bibtexparser.parse_string(raw_bib, parse_stack=parse_stack, allow_duplicate_fields=True)
 
+    if library.failed_blocks:
+        if warning_callback:
+            warning_message = "BibTeXの解析に失敗しました🥶\n失敗したブロック:\n\n" + "\n\n".join(block.raw for block in library.failed_blocks)
+            warning_callback(warning_message)
+        library.remove(library.failed_blocks)
+        if not library.entries:
+            raise ValueError("BibTeX解析エラー")
+
     if not library.entries:
-        error_message = "BibTeXの解析に失敗しました🥶" 
-        if library.failed_blocks:
-            error_message += "\n失敗したブロック:\n\n" + "\n\n".join(block.raw for block in library.failed_blocks)
-        else:
-            error_message += f"\n使い方の詳細は {README_URL} をご覧下さい"
-        raise ValueError(error_message)
+        raise ValueError(f"有効なBibTeXエントリが見つかりませんでした🤔\n使い方の詳細は {README_URL} をご覧下さい")
 
     return library
 
@@ -65,7 +68,7 @@ def simplify_bibtex_entry(
     if not raw_bib:
         raise ValueError(f"有効なBibTeXエントリが見つかりませんでした😰\n使い方の詳細は {README_URL} をご覧下さい")
 
-    library = _parse_bibtex_entries(raw_bib)
+    library = _parse_bibtex_entries(raw_bib, warning_callback=warning_callback)
     format = BibtexFormat()
     format.trailing_comma = True
     format.block_separator = "\n"
