@@ -13,5 +13,6 @@ def load_journal_name_dict() -> dict[str, str] | None:
             with open(filename, "r") as f:
                 _journal_name_dict = json.load(f)
         except FileNotFoundError:
-            logging.warning("%s が見つかりません。", filename)
+            logging.error("%s が見つかりません。", filename)
+            raise
     return _journal_name_dict
