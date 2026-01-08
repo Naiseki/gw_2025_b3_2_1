@@ -15,6 +15,7 @@ def build_short_booktitle(long_booktitle: str, warning_callback: Callable[[str],
     if not journal_name_dict:
         raise ValueError("論文誌名辞書の読み込みに失敗しました。")
 
+    long_booktitle = long_booktitle.split(":", 1)[0].strip()
     long_booktitle = long_booktitle.translate(str.maketrans("", "", ",.")).strip()
 
     pattern = r'''
@@ -61,6 +62,8 @@ def build_short_journal(long_journal: str, warning_callback: Callable[[str], Non
     if not journal_name_dict:
         raise ValueError("論文誌名辞書の読み込みに失敗しました。")
 
+
+    long_journal = long_journal.split(":", 1)[0].strip()
     long_journal = long_journal.translate(str.maketrans("", "", ",.")).strip()
     # Vol.XX などの部分を削除
     long_journal = re.sub(

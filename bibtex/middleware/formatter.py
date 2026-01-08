@@ -116,64 +116,48 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
     
     def _add_abbreviated_fields(self, entry: Entry) -> Entry:
         """journal/booktitleに略称がある場合、モードに応じてフィールドを作成"""
-        fields_dict = entry.fields_dict
-        
-        # journalフィールドの処理
-        if "journal" in fields_dict:
-            long_journal = str(fields_dict["journal"].value)
-            
-            # 略称抽出（カッコ内から）
-            long_journal, short_journal = self._extract_abbreviation(long_journal)
-            
-            if not short_journal:
+    
+        # 処理対象のフィールドとその略称生成関数のマッピング
+        target_fields = {
+            "journal": build_short_journal,
+            "booktitle": build_short_booktitle
+        }
+
+        for key, build_func in target_fields.items():
+            if key not in entry.fields_dict:
+                continue
+
+            # 現在の値を処理
+            original_value = str(entry.fields_dict[key].value)
+            long_name, short_name = self._extract_abbreviation(original_value)
+
+            # 略称が必要なモードで、かつ抽出できなかった場合は生成を試みる
+            if self.abbreviation_mode != "long" and not short_name:
                 try:
-                    short_journal = build_short_journal(long_journal, warning_callback=self.warning_callback)
+                    short_name = build_func(long_name, warning_callback=self.warning_callback)
                 except ValueError:
                     pass
 
-            if short_journal and short_journal != long_journal:
-                # abbreviation_modeに応じて配置を決定
-                new_fields = []
-                for field in entry.fields:
-                    if field.key.lower() == "journal":
-                        if self.abbreviation_mode == "short" or self.abbreviation_mode == "both":
-                            new_fields.append(Field(key="journal", value=short_journal))
-                        if self.abbreviation_mode == "long" or self.abbreviation_mode == "both":
-                            new_fields.append(Field(key="journal", value=long_journal))
-                    else:
-                        new_fields.append(field)
-                entry.fields = new_fields
-        
-        # booktitleフィールドの処理
-        if "booktitle" in fields_dict:
-            long_booktitle = str(fields_dict["booktitle"].value)
+            # booktitleの場合のみ "Proc. of " を付与するなどの個別調整
+            display_short = short_name
+            if key == "booktitle" and short_name:
+                display_short = f"Proc. of {short_name}"
 
-            # 略称抽出（カッコ内から）
-            long_booktitle, short_booktitle = self._extract_abbreviation(long_booktitle)
-            
-            # : 以降を除去
-            if ":" in long_booktitle:
-                long_booktitle = long_booktitle.split(":", 1)[0].strip()
-            
-            if not short_booktitle:
-                try:
-                    short_booktitle = build_short_booktitle(long_booktitle, warning_callback=self.warning_callback)
-                except ValueError:
-                    pass
-
-            if short_booktitle and short_booktitle != long_booktitle:
-                    # abbreviation_modeに応じて配置を決定
-                    new_fields = []
-                    for field in entry.fields:
-                        if field.key.lower() == "booktitle":
-                            if self.abbreviation_mode == "short" or self.abbreviation_mode == "both":
-                                new_fields.append(Field(key="booktitle", value="Proc. of " + short_booktitle))
-                            if self.abbreviation_mode == "long" or self.abbreviation_mode == "both":
-                                new_fields.append(Field(key="booktitle", value=long_booktitle))
-                        else:
-                            new_fields.append(field)
-                    entry.fields = new_fields
+            # 表示モードに応じた最終的な値の決定
+            final_long = "" if self.abbreviation_mode == "short" else long_name
         
+            # フィールドリストの更新
+            new_fields = []
+            for field in entry.fields:
+                if field.key.lower() == key:
+                    if display_short and display_short != final_long:
+                        new_fields.append(Field(key=key, value=display_short))
+                    if final_long:
+                        new_fields.append(Field(key=key, value=final_long))
+                else:
+                    new_fields.append(field)
+            entry.fields = new_fields
+
         return entry
     
     def _extract_abbreviation(self, text: str) -> tuple[str, str | None]:
