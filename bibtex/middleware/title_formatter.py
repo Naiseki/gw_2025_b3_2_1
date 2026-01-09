@@ -24,8 +24,8 @@ class TitleFormatterMiddleware(BlockMiddleware):
             # LaTeXコマンドのチェック (例: {\a})
             if self.warning_callback and re.search(r'\{[^}]*\\', title):
                 msg = (
-                    f"タイトルに LaTeX コマンドが含まれている可能性があります: `{title}`\n"
-                    r"`{\a}` や `{\"a}` のような形式は避け、できるだけ直接文字を入力してください。"
+                    f"タイトルに `{{\\a}}` のようなLaTeX コマンドが含まれている可能性があります: `{title}`\n"
+                    r"正しく整形されない可能性が高いため、ご注意ください🙇‍♂️"
                 )
                 self.warning_callback(msg)
 
@@ -43,19 +43,32 @@ class TitleFormatterMiddleware(BlockMiddleware):
         """タイトルをtitlecase形式に整形"""
         # 保護する部分を保存
         protected_parts = []
+        is_latex = bool(re.search(r'\{[^}]*\\', title))
         
         def protect_match(match):
             protected_parts.append(match.group(0))
             return f"<<protected-{len(protected_parts)-1}>>"
         
-        # 1. 中括弧で囲まれた部分を保護（中括弧自体は削除）
+        # 1. 中括弧で囲まれた部分を保護
         def protect_braces(match):
-            content = match.group(1)
+            if is_latex:
+                # LaTeXコマンドがある場合は中括弧を保持
+                content = match.group(0)
+            else:
+                # 通常の場合は中括弧を削除
+                content = match.group(1)
             protected_parts.append(content)
             return f"<<protected-{len(protected_parts)-1}>>"
         
         title = re.sub(r'\{([^}]+)\}', protect_braces, title)
         
+        # LaTeXコマンドが含まれている場合は、titlecaseを適用せずにそのまま返す
+        if is_latex:
+            # 保護された部分を復元（is_latexの場合は中括弧ごと保護されている）
+            for i, protected in enumerate(protected_parts):
+                title = title.replace(f"<<protected-{i}>>", protected)
+            return title
+
         # 2. コロン（:または：）の前にある2文字以上の連続大文字単語を保護
         # コロンの位置を探す
         colon_match = re.search(r'[:：]', title)

@@ -303,7 +303,8 @@ def test_latex_title_entry():
     pages = "1--21",
     year = "2025",
     url = "https://aclanthology.org/2025.jeptalnrecital-taln.1",
-}"""
+}
+"""
     assert simplified_bib == expected_simplified_bib
 
 def test_latex_command_entry():
