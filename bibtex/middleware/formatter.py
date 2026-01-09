@@ -126,12 +126,13 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
 
             # 現在の値を処理
             original_value = str(entry.fields_dict[key].value)
-            long_name
+            cleaned_value = self.clean_venue(original_value)
+            long_name, short_name = self._extract_abbreviation(cleaned_value)
 
             # 略称が必要なモードで、かつ抽出できなかった場合は生成を試みる
-            if self.abbreviation_mode != "long":
+            if self.abbreviation_mode != "long" and not short_name:
                 try:
-                    short_name = self.build_short_venue(original_value, is_booktitle=(key=="booktitle"), warning_callback=self.warning_callback)
+                    short_name = self.build_short_venue(long_name, is_booktitle=(key=="booktitle"), warning_callback=self.warning_callback)
                 except ValueError:
                     pass
 
@@ -141,7 +142,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
                 display_short = f"Proc. of {short_name}"
 
             # 表示モードに応じた最終的な値の決定
-            final_long = "" if self.abbreviation_mode == "short" else self.clean_venue(original_value)
+            final_long = "" if self.abbreviation_mode == "short" else long_name
         
             # フィールドリストの更新
             new_fields = []
@@ -160,7 +161,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
     def _extract_abbreviation(self, text: str) -> tuple[str, str | None]:
         """
         文字列末尾のカッコ部分を抽出し、略称候補として整形する。
-        戻り値: 整形された略称
+        戻り値: (カッコを除去した文字列, 整形された略称)
         """
         # 末尾の (xxx) または （xxx） を検出
         match = re.search(r'\s*[\(（]([^\)）]*)[\)）]\s*$', text)
@@ -170,7 +171,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             
             # 略称の整形
             # 1. {}を除去
-            abbr = re.sub(r"{(.+?)}", r"\1", content)
+            abbr = content.replace("{", "").replace("}", "")
             # 2. 年号を除去 (末尾の数字4桁、およびその前の区切り文字)
             abbr = re.sub(r'[\s\-\u2013\u2014]*\d{4}$', '', abbr).strip()
             
@@ -185,26 +186,24 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
     
     def clean_venue(self, text: str) -> str:
         """
-        Volume情報および末尾のカッコ部分を削除して、純粋なVenue名のみを返す。
-        例: "Proceedings... (ACL 2019), Volume 1" -> "Proceedings..."
+        Volume, Vol, Part などの付加情報を、後ろの説明文（Articles longs等）含めて削除する。
         """
-        cleaned = text.strip()
-        # 1. Volume/Vol/No情報の削除 (', Volume 1 - Articles' 等)
-        # 冒頭に [,.]\s* を入れることで区切り記号ごと消す
-        keywords = r"Volume|Vol\.?|No\.?|Part|Issue"
-        volume_pattern = rf"[,.]\s+({keywords})\s+\d+.*$"
-        cleaned = re.sub(volume_pattern, "", cleaned, flags=re.IGNORECASE).strip()
-
-        # 2. 末尾のカッコ部分の削除 ( (ACL 2019) や (TALN) 等)
-        # \s*[\(（].*[\)）]\s*$ : カッコで囲まれた末尾部分を根こそぎ消す
-        abbreviation_pattern = r"\s*[\(（][^\)）]*[\)）]\s*$"
-        cleaned = re.sub(abbreviation_pattern, "", cleaned).strip()
-
-        # 3. 最後に残ったゴミ（末尾のカンマやピリオド）を掃除
-        cleaned = re.sub(r"[,.]$", "", cleaned).strip()
+        # キーワードリスト
+        keywords = r"Volume|Vol\.?|No\.?"
+    
+        # 正規表現の解説:
+        # [,.]\s+   : ピリオドまたはカンマの後に1つ以上のスペース
+        # ({keywords})   : 指定したキーワードのいずれか
+        # \s+            : 1つ以上のスペース
+        # \d+            : 数字（巻数など）
+        # (.*)$          : その後、行末までの全文字（ハイフンや "Articles longs" など）
+        pattern = rf"[,.]\s+({keywords})\s+\d+.*$"
+    
+        # re.IGNORECASE: 大文字小文字を問わない
+        # re.DOTALL は使わない（改行の手前までで止めるため）
+        cleaned = re.sub(pattern, "", text, flags=re.IGNORECASE).strip()
 
         return cleaned
-
 
     def build_short_venue(self, long_name: str, is_booktitle: bool = True, warning_callback: Callable[[str], None] | None = None) -> str:
         """journal/booktitle 共通の略称生成ロジック"""
@@ -222,11 +221,6 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         name = re.sub(r"{(.+?)}", r"\1", name)
         # 3. カンマ、ピリオドを削除
         name = name.translate(str.maketrans("", "", ",.")).strip()
-        
-        # 末尾のカッコ部分を削除して略称抽出 (もしあればそれを返す)
-        name, abbr = self._extract_abbreviation(name)
-        if abbr:
-            return abbr
 
         # --- 個別のノイズ削除 ---
         if is_booktitle:
