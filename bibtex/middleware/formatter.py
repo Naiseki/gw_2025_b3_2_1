@@ -130,6 +130,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             # 現在の値を処理
             original_value = str(entry.fields_dict[key].value)
             long_name, short_name = self._extract_abbreviation(original_value)
+            long_name = self.clean_venue(long_name)
 
             # 略称が必要なモードで、かつ抽出できなかった場合は生成を試みる
             if self.abbreviation_mode != "long" and not short_name:
@@ -184,3 +185,25 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
                 return cleaned_text, None
         
         return text, None
+
+    
+    def clean_venue(text: str) -> str:
+        """
+        Volume, Vol, Part などの付加情報を、後ろの説明文（Articles longs等）含めて削除する。
+        """
+        # キーワードリスト
+        keywords = r"Volume|Vol\.?|No\.?"
+    
+        # 正規表現の解説:
+        # [,.]\s+   : ピリオドまたはカンマの後に1つ以上のスペース
+        # ({keywords})   : 指定したキーワードのいずれか
+        # \s+            : 1つ以上のスペース
+        # \d+            : 数字（巻数など）
+        # (.*)$          : その後、行末までの全文字（ハイフンや "Articles longs" など）
+        pattern = rf"[,.]\s+({keywords})\s+\d+.*$"
+    
+        # re.IGNORECASE: 大文字小文字を問わない
+        # re.DOTALL は使わない（改行の手前までで止めるため）
+        cleaned = re.sub(pattern, "", text, flags=re.IGNORECASE).strip()
+
+        return cleaned
