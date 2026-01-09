@@ -5,8 +5,8 @@ from bibtex.middleware.formatter import BibTeXFormatterMiddleware
 
 @pytest.fixture
 def mock_journal_dict():
-    # utils.py 内の load_journal_name_dict を mock する
-    with patch("bibtex.utils.load_journal_name_dict") as mocked:
+    # utils.py 内の load_venue_dict を mock する
+    with patch("bibtex.utils.load_venue_dict") as mocked:
         mocked.return_value = {
             "Journal of Artificial Intelligence Research": "JAIR",
             "International Conference on Machine Learning": "ICML"

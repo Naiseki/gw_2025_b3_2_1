@@ -3,7 +3,7 @@ from typing import Callable
 from bibtexparser.model import Entry
 from bibtexparser.middlewares.middleware import BlockMiddleware
 from bibtexparser.model import Field
-from load_resource import load_journal_name_dict
+from load_resource import load_venue_dict
 
 
 class BibTeXFormatterMiddleware(BlockMiddleware):
@@ -210,8 +210,8 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         if not long_name:
             return ""
 
-        journal_name_dict = load_journal_name_dict()
-        if journal_name_dict is None:
+        venue_dict = load_venue_dict()
+        if venue_dict is None:
             raise ValueError("論文誌名辞書の読み込みに失敗しました。")
 
         # --- 共通のクリーニング ---
@@ -243,11 +243,11 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             max_drop = 4
             for i in range(min(max_drop, len(words))):
                 key = " ".join(words[i:])
-                if key in journal_name_dict:
-                    return journal_name_dict[key]
+                if key in venue_dict:
+                    return venue_dict[key]
         else:
-            if name in journal_name_dict:
-                return journal_name_dict[name]
+            if name in venue_dict:
+                return venue_dict[name]
 
         # --- 2. 単語が1つの場合はそのまま ---
         if len(words) == 1:
