@@ -25,6 +25,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         self.abbreviation_mode = abbreviation_mode
         self.warning_callback = warning_callback
     
+
     def transform_entry(self, entry: Entry, *args, **kwargs) -> Entry:
         """エントリを整形する"""
         # arXivの場合、journalフィールドをeprintから作成
@@ -53,10 +54,12 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         
         return entry
 
+
     def _is_arxiv(self, entry: Entry) -> bool:
         """arXiv論文かどうか判定"""
         return (prefix := entry.fields_dict.get("archiveprefix")) and prefix.value == "arXiv"
     
+
     def _create_arxiv_journal(self, entry: Entry) -> Entry:
         """arXivのjournalフィールドをeprintから作成"""
         if "journal" not in entry.fields_dict and "eprint" in entry.fields_dict:
@@ -66,6 +69,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             entry.fields.append(Field(key="journal", value=journal_value))
         return entry
     
+
     def _create_url_from_doi(self, entry: Entry) -> Entry:
         """URLがない場合、DOIからURLを作成"""
         if "url" not in entry.fields_dict and "doi" in entry.fields_dict:
@@ -79,6 +83,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             entry.fields.append(Field(key="url", value=url_value))
         return entry
     
+
     def _clean_url(self, entry: Entry) -> Entry:
         """URLの整形：最後のスラッシュを削除、,|の手前の1個目を採用"""
         if "url" in entry.fields_dict:
@@ -98,6 +103,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
                     break
         return entry
     
+
     def _reorder_fields(self, entry: Entry, field_order: list) -> Entry:
         """
         フィールドを指定された順序に並び替え
@@ -113,6 +119,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
 
         entry.fields = ordered_fields
         return entry
+    
     
     def _add_abbreviated_fields(self, entry: Entry) -> Entry:
         """journal/booktitleに略称がある場合、モードに応じてフィールドを作成"""
@@ -157,7 +164,6 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
 
         return entry
 
-    import re
 
     def process_venue_text(self, text: str) -> tuple[str, str | None]:
         """
@@ -177,12 +183,13 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
         cleaned = re.sub(volume_pattern, "", cleaned, flags=re.IGNORECASE).strip()
 
         # 3. カッコ部分の抽出と削除
-        # 末尾の (xxx) または （xxx） をターゲットにする
-        match = re.search(r'\s*[\(（]([^\)）]*)[\)）]\s*$', cleaned)
+        # (xxx) または （xxx） をターゲットにする。末尾またはコロンの前を許容
+        match = re.search(r'\s*[\(（]([^\)）]*)[\)）]\s*(?=:|$)', cleaned)
         if match:
             content = match.group(1)
             # カッコを除去したベーステキストを一旦キープ
-            cleaned = cleaned[:match.start()].strip()
+            post_match = cleaned[match.end():]
+            cleaned = (cleaned[:match.start()] + post_match).strip()
         
             # --- 略称の整形ロジック ---
             # a. {}を除去 (LaTeX対策)
@@ -190,7 +197,6 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             # b. 年号を除去 (末尾の数字4桁)
             abbr = re.sub(r'[\s\-\u2013\u2014]*\d{4}$', '', abbr).strip()
         
-            # 大文字のみ、あるいは特定の略称ルールに合致すれば略称として採用
             if abbr and abbr.isupper():
                 extracted_abbr = abbr
 

@@ -270,7 +270,7 @@ def test_simplify_bibtex_entry_empty_input():
         assert "有効なBibTeXエントリが見つかりませんでした" in str(e)
 
 def test_latex_title_entry():
-    raw_bib = """@inproceedings{bleuze-etal-2025-de,
+    raw_bib = r"""@inproceedings{bleuze-etal-2025-de,
     title = "{\guillemotleft} De nos jours, ce sont les r{\'e}sultats qui comptent {\guillemotright} : cr{\'e}ation et {\'e}tude diachronique d{'}un corpus de revendications issues d{'}articles de {TAL}",
     author = {Bleuze, Clementine  and
       Ducel, Fanny  and
@@ -292,7 +292,7 @@ def test_latex_title_entry():
     language = "fra"
 }"""
     simplified_bib = simplify_bibtex_entry(raw_bib, abbreviation_mode="both")
-    expected_simplified_bib = """@inproceedings{bleuze-etal-2025-de,
+    expected_simplified_bib = r"""@inproceedings{bleuze-etal-2025-de,
     title = "{\guillemotleft} De nos jours, ce sont les r{\'e}sultats qui comptent {\guillemotright} : cr{\'e}ation et {\'e}tude diachronique d{'}un corpus de revendications issues d{'}articles de {TAL}",
     author = "Bleuze, Clementine  and
       Ducel, Fanny  and
@@ -364,7 +364,7 @@ def test_brace_colon():
     pages = "49--54",
     year = "2019",
     url = "https://aclanthology.org/D19-3009",
-}"""
-
+}
+"""
     simplified_bib = simplify_bibtex_entry(raw_bib, abbreviation_mode="both")
     assert simplified_bib == expected_simplified_bib
