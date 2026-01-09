@@ -3,7 +3,7 @@ from typing import Callable
 from bibtexparser.model import Entry
 from bibtexparser.middlewares.middleware import BlockMiddleware
 from bibtexparser.model import Field
-from ..utils import build_short_booktitle, build_short_journal
+from load_resource import load_venue_dict
 
 
 class BibTeXFormatterMiddleware(BlockMiddleware):
@@ -116,64 +116,46 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
     
     def _add_abbreviated_fields(self, entry: Entry) -> Entry:
         """journal/booktitleに略称がある場合、モードに応じてフィールドを作成"""
-        fields_dict = entry.fields_dict
-        
-        # journalフィールドの処理
-        if "journal" in fields_dict:
-            long_journal = str(fields_dict["journal"].value)
-            
-            # 略称抽出（カッコ内から）
-            long_journal, short_journal = self._extract_abbreviation(long_journal)
-            
-            if not short_journal:
+    
+        # 対象フィールド
+        target_fields = ["journal", "booktitle"]
+
+        for key in target_fields:
+            if key not in entry.fields_dict:
+                continue
+
+            # 現在の値を処理
+            original_value = str(entry.fields_dict[key].value)
+            cleaned_value = self.clean_venue(original_value)
+            long_name, short_name = self._extract_abbreviation(cleaned_value)
+
+            # 略称が必要なモードで、かつ抽出できなかった場合は生成を試みる
+            if self.abbreviation_mode != "long" and not short_name:
                 try:
-                    short_journal = build_short_journal(long_journal, warning_callback=self.warning_callback)
+                    short_name = self.build_short_venue(long_name, is_booktitle=(key=="booktitle"), warning_callback=self.warning_callback)
                 except ValueError:
                     pass
 
-            if short_journal and short_journal != long_journal:
-                # abbreviation_modeに応じて配置を決定
-                new_fields = []
-                for field in entry.fields:
-                    if field.key.lower() == "journal":
-                        if self.abbreviation_mode == "short" or self.abbreviation_mode == "both":
-                            new_fields.append(Field(key="journal", value=short_journal))
-                        if self.abbreviation_mode == "long" or self.abbreviation_mode == "both":
-                            new_fields.append(Field(key="journal", value=long_journal))
-                    else:
-                        new_fields.append(field)
-                entry.fields = new_fields
-        
-        # booktitleフィールドの処理
-        if "booktitle" in fields_dict:
-            long_booktitle = str(fields_dict["booktitle"].value)
+            # booktitleの場合のみ "Proc. of " を付与するなどの個別調整
+            display_short = short_name
+            if key == "booktitle" and short_name:
+                display_short = f"Proc. of {short_name}"
 
-            # 略称抽出（カッコ内から）
-            long_booktitle, short_booktitle = self._extract_abbreviation(long_booktitle)
-            
-            # : 以降を除去
-            if ":" in long_booktitle:
-                long_booktitle = long_booktitle.split(":", 1)[0].strip()
-            
-            if not short_booktitle:
-                try:
-                    short_booktitle = build_short_booktitle(long_booktitle, warning_callback=self.warning_callback)
-                except ValueError:
-                    pass
-
-            if short_booktitle and short_booktitle != long_booktitle:
-                    # abbreviation_modeに応じて配置を決定
-                    new_fields = []
-                    for field in entry.fields:
-                        if field.key.lower() == "booktitle":
-                            if self.abbreviation_mode == "short" or self.abbreviation_mode == "both":
-                                new_fields.append(Field(key="booktitle", value="Proc. of " + short_booktitle))
-                            if self.abbreviation_mode == "long" or self.abbreviation_mode == "both":
-                                new_fields.append(Field(key="booktitle", value=long_booktitle))
-                        else:
-                            new_fields.append(field)
-                    entry.fields = new_fields
+            # 表示モードに応じた最終的な値の決定
+            final_long = "" if self.abbreviation_mode == "short" else long_name
         
+            # フィールドリストの更新
+            new_fields = []
+            for field in entry.fields:
+                if field.key.lower() == key:
+                    if display_short and display_short != final_long:
+                        new_fields.append(Field(key=key, value=display_short))
+                    if final_long:
+                        new_fields.append(Field(key=key, value=final_long))
+                else:
+                    new_fields.append(field)
+            entry.fields = new_fields
+
         return entry
     
     def _extract_abbreviation(self, text: str) -> tuple[str, str | None]:
@@ -200,3 +182,81 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
                 return cleaned_text, None
         
         return text, None
+
+    
+    def clean_venue(self, text: str) -> str:
+        """
+        Volume, Vol, Part などの付加情報を、後ろの説明文（Articles longs等）含めて削除する。
+        """
+        # キーワードリスト
+        keywords = r"Volume|Vol\.?|No\.?"
+    
+        # 正規表現の解説:
+        # [,.]\s+   : ピリオドまたはカンマの後に1つ以上のスペース
+        # ({keywords})   : 指定したキーワードのいずれか
+        # \s+            : 1つ以上のスペース
+        # \d+            : 数字（巻数など）
+        # (.*)$          : その後、行末までの全文字（ハイフンや "Articles longs" など）
+        pattern = rf"[,.]\s+({keywords})\s+\d+.*$"
+    
+        # re.IGNORECASE: 大文字小文字を問わない
+        # re.DOTALL は使わない（改行の手前までで止めるため）
+        cleaned = re.sub(pattern, "", text, flags=re.IGNORECASE).strip()
+
+        return cleaned
+
+    def build_short_venue(self, long_name: str, is_booktitle: bool = True, warning_callback: Callable[[str], None] | None = None) -> str:
+        """journal/booktitle 共通の略称生成ロジック"""
+        if not long_name:
+            return ""
+
+        venue_dict = load_venue_dict()
+        if venue_dict is None:
+            raise ValueError("論文誌名辞書の読み込みに失敗しました。")
+
+        # --- 共通のクリーニング ---
+        # 1. コロン以降を削除
+        name = long_name.split(":", 1)[0]
+        # 2. 波括弧 {A} -> A
+        name = re.sub(r"{(.+?)}", r"\1", name)
+        # 3. カンマ、ピリオドを削除
+        name = name.translate(str.maketrans("", "", ",.")).strip()
+
+        # --- 個別のノイズ削除 ---
+        if is_booktitle:
+            # Proceedings of... などの前置きを削除
+            pattern = r'^(?:In\s+)?(?:Proceedings|Proc\.)\s+of\s+(?:the\s+)?(?:\d{4}|\d+(?:st|nd|rd|th))?\s*'
+            name = re.sub(pattern, '', name, flags=re.IGNORECASE | re.VERBOSE)
+        else:
+            # Vol.XX, No.XX, (20xx) などを削除
+            pattern = r'\s+(?:Vol(?:ume)?|No|Issue)\.?\s*\d+|\s*\(\d{4}\)'
+            name = re.sub(pattern, '', name, flags=re.IGNORECASE)
+
+        name = name.strip()
+        words = name.split()
+        if not words:
+            return ""
+
+        # --- 1. 辞書検索 ---
+        # booktitleの場合は部分一致（後ろから削る）も試みる
+        if is_booktitle:
+            max_drop = 4
+            for i in range(min(max_drop, len(words))):
+                key = " ".join(words[i:])
+                if key in venue_dict:
+                    return venue_dict[key]
+        else:
+            if name in venue_dict:
+                return venue_dict[name]
+
+        # --- 2. 単語が1つの場合はそのまま ---
+        if len(words) == 1:
+            return name
+
+        # --- 3. 最終手段：イニシャル抽出 ---
+        venue_type = "会議名" if is_booktitle else "ジャーナル名"
+        if warning_callback:
+            warning_callback(f"*! ! ! {venue_type}が辞書に見つからなかったため、イニシャルで作成します。*")
+
+        initials = "".join(word[0] for word in words if word and word[0].isupper())
+        return initials

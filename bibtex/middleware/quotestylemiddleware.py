@@ -1,9 +1,11 @@
 from bibtexparser.middlewares import BlockMiddleware
 from bibtexparser.model import Entry
+import re
 
 class QuoteStyleMiddleware(BlockMiddleware):
     """
-    すべてのフィールドを key="value" の形式で書き込むが、`title` は key={{value}} の形式で書き込む。
+    すべてのフィールドを key="value" の形式で書き込むが、`title` は原則 key={{value}} の形式で書き込む。
+    ただし、タイトルに LaTeX コマンドが含まれる場合は key="value" 形式にする。
     """
 
     def transform_entry(self, entry: Entry, *args, **kwargs) -> Entry:
@@ -15,11 +17,16 @@ class QuoteStyleMiddleware(BlockMiddleware):
             raw_val = str(field.value)
 
             if key == "title":
-                # {{TITLE_VALUE}}
-                quoted = f"{{{{{raw_val}}}}}"
-            elif key == "pages":
-                val = raw_val.replace(r"{\textendash}", "--")
-                quoted = f'"{val}"'
+                # LaTeXコマンド（例: {\a}）が含まれているかチェック
+                if re.search(r'\{[^}]*\\', raw_val):
+                    # "TITLE_VALUE"
+                    quoted = f'"{raw_val}"'
+                else:
+                    # {{TITLE_VALUE}}
+                    quoted = f"{{{{{raw_val}}}}}"
+            # elif key == "pages":
+            #     val = raw_val.replace(r"{\textendash}", "--")
+            #     quoted = f'"{val}"'
             else:
                 # "VALUE"
                 quoted = f'"{raw_val}"'

@@ -76,7 +76,7 @@ def simplify_bibtex_entry(
     result = bibtexparser.write_string(
         library, 
         unparse_stack=[
-            TitleFormatterMiddleware(), 
+            TitleFormatterMiddleware(warning_callback=warning_callback), 
             BibTeXFormatterMiddleware(abbreviation_mode=abbreviation_mode, warning_callback=warning_callback), 
             # LatexEncodingMiddleware(enclose_urls=False), 
             QuoteStyleMiddleware()

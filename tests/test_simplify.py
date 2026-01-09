@@ -261,3 +261,74 @@ def test_simplify_bibtex_entry_short_mode():
 """
     simplified_bib_short = simplify_bibtex_entry(raw_bib, abbreviation_mode="short")
     assert simplified_bib_short == expected_simplified_bib
+
+
+def test_simplify_bibtex_entry_empty_input():
+    try:
+        simplify_bibtex_entry("", abbreviation_mode="both")
+    except ValueError as e:
+        assert "有効なBibTeXエントリが見つかりませんでした" in str(e)
+
+def test_latex_title_entry():
+    raw_bib = """@inproceedings{bleuze-etal-2025-de,
+    title = "{\guillemotleft} De nos jours, ce sont les r{\'e}sultats qui comptent {\guillemotright} : cr{\'e}ation et {\'e}tude diachronique d{'}un corpus de revendications issues d{'}articles de {TAL}",
+    author = {Bleuze, Clementine  and
+      Ducel, Fanny  and
+      Amblard, Maxime  and
+      Fort, Kar{\"e}n},
+    editor = "Bechet, Fr{\'e}d{\'e}ric  and
+      Chifu, Adrian-Gabriel  and
+      Pinel-sauvagnat, Karen  and
+      Favre, Benoit  and
+      Maes, Eliot  and
+      Nurbakova, Diana",
+    booktitle = "Actes des 32{\`e}me Conf{\'e}rence sur le Traitement Automatique des Langues Naturelles (TALN), volume 1 : articles scientifiques originaux",
+    month = "6",
+    year = "2025",
+    address = "Marseille, France",
+    publisher = "ATALA {\textbackslash}{\textbackslash}{\&} ARIA",
+    url = "https://aclanthology.org/2025.jeptalnrecital-taln.1/",
+    pages = "1--21",
+    language = "fra"
+}"""
+    simplified_bib = simplify_bibtex_entry(raw_bib, abbreviation_mode="both")
+    expected_simplified_bib = """@inproceedings{bleuze-etal-2025-de,
+    title = "{\guillemotleft} De nos jours, ce sont les r{\'e}sultats qui comptent {\guillemotright} : cr{\'e}ation et {\'e}tude diachronique d{'}un corpus de revendications issues d{'}articles de {TAL}",
+    author = "Bleuze, Clementine  and
+      Ducel, Fanny  and
+      Amblard, Maxime  and
+      Fort, Kar{\"e}n",
+    booktitle = "Proc. of TALN",
+    booktitle = "Actes des 32{\`e}me Conf{\'e}rence sur le Traitement Automatique des Langues Naturelles",
+    pages = "1--21",
+    year = "2025",
+    url = "https://aclanthology.org/2025.jeptalnrecital-taln.1",
+}
+"""
+    assert simplified_bib == expected_simplified_bib
+
+def test_latex_command_entry():
+    raw_bib = """@inproceedings{test,
+    title = {A Title with {\\a} LaTeX command},
+    author = {{\\e} Name},
+    booktitle = "Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing",
+    year = {2024}
+}"""
+
+    expected_simplified_bib = """@inproceedings{test,
+    title = {A Title with {\\a} LaTeX command},
+    author = {{\\e} Name},
+    booktitle = "Proc. of EMNLP",
+    booktitle = "Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing",
+    year = {2024}
+}"""
+    
+    warnings = []
+    def warning_callback(msg):
+        warnings.append(msg)
+        
+    simplified_bib = simplify_bibtex_entry(raw_bib, warning_callback=warning_callback)
+    
+    assert len(warnings) == 1
+    assert "LaTeX コマンドが含まれている可能性があります" in warnings[0]
+    assert "{\\a}" in warnings[0]
