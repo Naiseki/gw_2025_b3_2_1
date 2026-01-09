@@ -126,8 +126,8 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
 
             # 現在の値を処理
             original_value = str(entry.fields_dict[key].value)
-            long_name, short_name = self._extract_abbreviation(original_value)
-            long_name = self.clean_venue(long_name)
+            cleaned_value = self.clean_venue(original_value)
+            long_name, short_name = self._extract_abbreviation(cleaned_value)
 
             # 略称が必要なモードで、かつ抽出できなかった場合は生成を試みる
             if self.abbreviation_mode != "long" and not short_name:

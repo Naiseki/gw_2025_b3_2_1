@@ -138,3 +138,21 @@ def test_bert_booktitle():
     
     booktitle_fields = [f.value for f in new_entry.fields if f.key == "booktitle"]
     assert booktitle_fields == ["Proc. of NAACL", "Proceedings of the 2019 Conference of the North {A}merican Chapter of the Association for Computational Linguistics: Human Language Technologies"]
+
+def test_taln():
+    middleware = BibTeXFormatterMiddleware(abbreviation_mode="both")
+    entry = create_entry(entry_type="inproceedings", booktitle="Actes des 32ème Conférence sur le Traitement Automatique des Langues Naturelles (TALN), volume 1 : articles scientifiques originaux")
+    
+    new_entry = middleware._add_abbreviated_fields(entry)
+    
+    booktitle_fields = [f.value for f in new_entry.fields if f.key == "booktitle"]
+    assert booktitle_fields == ["Proc. of TALN", "Actes des 32ème Conférence sur le Traitement Automatique des Langues Naturelles"]
+
+def test_tacl():
+    middleware = BibTeXFormatterMiddleware(abbreviation_mode="both")
+    entry = create_entry(journal="Transactions of the Association for Computational Linguistics, Volume 4")
+    
+    new_entry = middleware._add_abbreviated_fields(entry)
+    
+    journal_fields = [f.value for f in new_entry.fields if f.key == "journal"]
+    assert journal_fields == ["TACL", "Transactions of the Association for Computational Linguistics"]

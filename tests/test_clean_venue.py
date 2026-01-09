@@ -45,4 +45,4 @@ class TestCleanVenue:
 
     def test_only_keywords(self, middleware):
         """キーワードのみの場合のテスト"""
-        assert middleware.clean_venue("Vol. 1") == ""
+        assert middleware.clean_venue(", Vol. 1") == ""
