@@ -118,7 +118,7 @@ def test_warning_callback_on_initials(mock_journal_dict):
     middleware._add_abbreviated_fields(entry)
     
     assert len(warnings) > 0
-    assert "イニシャルで省略形を作成します" in warnings[0]
+    assert "イニシャルで作成します" in warnings[0]
 
 def test_colon_in_journal_name(mock_journal_dict):
     middleware = BibTeXFormatterMiddleware(abbreviation_mode="both")
@@ -137,4 +137,4 @@ def test_bert_booktitle():
     new_entry = middleware._add_abbreviated_fields(entry)
     
     booktitle_fields = [f.value for f in new_entry.fields if f.key == "booktitle"]
-    assert booktitle_fields == ["Proc. of NAACL-HLT", "Proceedings of the 2019 Conference of the North {A}merican Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1"]
+    assert booktitle_fields == ["Proc. of NAACL", "Proceedings of the 2019 Conference of the North {A}merican Chapter of the Association for Computational Linguistics: Human Language Technologies"]
