@@ -126,8 +126,7 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
 
             # 現在の値を処理
             original_value = str(entry.fields_dict[key].value)
-            cleaned_value = self.clean_venue(original_value)
-            long_name, short_name = self._extract_abbreviation(cleaned_value)
+            long_name, short_name = self.process_venue_text(original_value)
 
             # 略称が必要なモードで、かつ抽出できなかった場合は生成を試みる
             if self.abbreviation_mode != "long" and not short_name:
@@ -157,53 +156,49 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             entry.fields = new_fields
 
         return entry
+
+    import re
+
+    def process_venue_text(self, text: str) -> tuple[str, str | None]:
+        """
+        Venue文字列から略称を抽出しつつ、不要な付加情報（Volumeやカッコ）を削ぎ落とす。
     
-    def _extract_abbreviation(self, text: str) -> tuple[str, str | None]:
+        Returns:
+            tuple[str, str | None]: (クリーニング済みVenue名, 抽出した略称)
         """
-        文字列末尾のカッコ部分を抽出し、略称候補として整形する。
-        戻り値: (カッコを除去した文字列, 整形された略称)
-        """
-        # 末尾の (xxx) または （xxx） を検出
-        match = re.search(r'\s*[\(（]([^\)）]*)[\)）]\s*$', text)
+        # 1. 準備：前後の空白削除と初期化
+        cleaned = text.strip()
+        extracted_abbr = None
+
+        # 2. Volume情報の削除 (', Volume 1 - Articles' 等)
+        # カッコ(略称)の後にVolumeが来ることが多いため、先に削除
+        keywords = r"Volume|Vol\.?|No\.?|Part|Issue"
+        volume_pattern = rf"[,.]\s+({keywords})\s+\d+.*$"
+        cleaned = re.sub(volume_pattern, "", cleaned, flags=re.IGNORECASE).strip()
+
+        # 3. カッコ部分の抽出と削除
+        # 末尾の (xxx) または （xxx） をターゲットにする
+        match = re.search(r'\s*[\(（]([^\)）]*)[\)）]\s*$', cleaned)
         if match:
             content = match.group(1)
-            cleaned_text = text[:match.start()].strip()
-            
-            # 略称の整形
-            # 1. {}を除去
-            abbr = content.replace("{", "").replace("}", "")
-            # 2. 年号を除去 (末尾の数字4桁、およびその前の区切り文字)
-            abbr = re.sub(r'[\s\-\u2013\u2014]*\d{4}$', '', abbr).strip()
-            
-            if abbr and abbr.isupper():
-                return cleaned_text, abbr
-            else:
-                # 略称が空になった場合（年号のみだった場合など）はNoneを返す
-                return cleaned_text, None
+            # カッコを除去したベーステキストを一旦キープ
+            cleaned = cleaned[:match.start()].strip()
         
-        return text, None
+            # --- 略称の整形ロジック ---
+            # a. {}を除去 (LaTeX対策)
+            abbr = re.sub(r"{(.+?)}", r"\1", content)
+            # b. 年号を除去 (末尾の数字4桁)
+            abbr = re.sub(r'[\s\-\u2013\u2014]*\d{4}$', '', abbr).strip()
+        
+            # 大文字のみ、あるいは特定の略称ルールに合致すれば略称として採用
+            if abbr and abbr.isupper():
+                extracted_abbr = abbr
 
-    
-    def clean_venue(self, text: str) -> str:
-        """
-        Volume, Vol, Part などの付加情報を、後ろの説明文（Articles longs等）含めて削除する。
-        """
-        # キーワードリスト
-        keywords = r"Volume|Vol\.?|No\.?"
-    
-        # 正規表現の解説:
-        # [,.]\s+   : ピリオドまたはカンマの後に1つ以上のスペース
-        # ({keywords})   : 指定したキーワードのいずれか
-        # \s+            : 1つ以上のスペース
-        # \d+            : 数字（巻数など）
-        # (.*)$          : その後、行末までの全文字（ハイフンや "Articles longs" など）
-        pattern = rf"[,.]\s+({keywords})\s+\d+.*$"
-    
-        # re.IGNORECASE: 大文字小文字を問わない
-        # re.DOTALL は使わない（改行の手前までで止めるため）
-        cleaned = re.sub(pattern, "", text, flags=re.IGNORECASE).strip()
+        # 4. 仕上げ：末尾に残ったカンマやピリオドを掃除
+        cleaned = re.sub(r"[,.]$", "", cleaned).strip()
 
-        return cleaned
+        return cleaned, extracted_abbr
+    
 
     def build_short_venue(self, long_name: str, is_booktitle: bool = True, warning_callback: Callable[[str], None] | None = None) -> str:
         """journal/booktitle 共通の略称生成ロジック"""
