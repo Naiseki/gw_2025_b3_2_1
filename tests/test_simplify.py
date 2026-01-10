@@ -270,7 +270,7 @@ def test_simplify_bibtex_entry_empty_input():
         assert "有効なBibTeXエントリが見つかりませんでした" in str(e)
 
 def test_latex_title_entry():
-    raw_bib = """@inproceedings{bleuze-etal-2025-de,
+    raw_bib = r"""@inproceedings{bleuze-etal-2025-de,
     title = "{\guillemotleft} De nos jours, ce sont les r{\'e}sultats qui comptent {\guillemotright} : cr{\'e}ation et {\'e}tude diachronique d{'}un corpus de revendications issues d{'}articles de {TAL}",
     author = {Bleuze, Clementine  and
       Ducel, Fanny  and
@@ -292,7 +292,7 @@ def test_latex_title_entry():
     language = "fra"
 }"""
     simplified_bib = simplify_bibtex_entry(raw_bib, abbreviation_mode="both")
-    expected_simplified_bib = """@inproceedings{bleuze-etal-2025-de,
+    expected_simplified_bib = r"""@inproceedings{bleuze-etal-2025-de,
     title = "{\guillemotleft} De nos jours, ce sont les r{\'e}sultats qui comptent {\guillemotright} : cr{\'e}ation et {\'e}tude diachronique d{'}un corpus de revendications issues d{'}articles de {TAL}",
     author = "Bleuze, Clementine  and
       Ducel, Fanny  and
@@ -332,3 +332,39 @@ def test_latex_command_entry():
     assert len(warnings) == 1
     assert "LaTeX コマンドが含まれている可能性があります" in warnings[0]
     assert "{\\a}" in warnings[0]
+
+
+def test_brace_colon():
+    raw_bib = """@inproceedings{alva-manchego-etal-2019-easse,
+    title = "{EASSE}: Easier Automatic Sentence Simplification Evaluation",
+    author = "Alva-Manchego, Fernando  and
+      Martin, Louis  and
+      Scarton, Carolina  and
+      Specia, Lucia",
+    editor = "Pad{\'o}, Sebastian  and
+      Huang, Ruihong",
+    booktitle = "Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP): System Demonstrations",
+    month = nov,
+    year = "2019",
+    address = "Hong Kong, China",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/D19-3009/",
+    doi = "10.18653/v1/D19-3009",
+    pages = "49--54",
+    abstract = "We introduce EASSE, a Python package aiming to facilitate and standardise automatic evaluation and comparison of Sentence Simplification (SS) systems. EASSE provides a single access point to a broad range of evaluation resources: standard automatic metrics for assessing SS outputs (e.g. SARI), word-level accuracy scores for certain simplification transformations, reference-independent quality estimation features (e.g. compression ratio), and standard test data for SS evaluation (e.g. TurkCorpus). Finally, EASSE generates easy-to-visualise reports on the various metrics and features above and on how a particular SS output fares against reference simplifications. Through experiments, we show that these functionalities allow for better comparison and understanding of the performance of SS systems."
+}"""
+    expected_simplified_bib = """@inproceedings{alva-manchego-etal-2019-easse,
+    title = {{EASSE: Easier Automatic Sentence Simplification Evaluation}},
+    author = "Alva-Manchego, Fernando  and
+      Martin, Louis  and
+      Scarton, Carolina  and
+      Specia, Lucia",
+    booktitle = "Proc. of EMNLP-IJCNLP",
+    booktitle = "Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing: System Demonstrations",
+    pages = "49--54",
+    year = "2019",
+    url = "https://aclanthology.org/D19-3009",
+}
+"""
+    simplified_bib = simplify_bibtex_entry(raw_bib, abbreviation_mode="both")
+    assert simplified_bib == expected_simplified_bib

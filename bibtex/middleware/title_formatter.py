@@ -39,6 +39,7 @@ class TitleFormatterMiddleware(BlockMiddleware):
         
         return entry
     
+
     def _format_title(self, title: str) -> str:
         """タイトルをtitlecase形式に整形"""
         # 保護する部分を保存
@@ -69,17 +70,18 @@ class TitleFormatterMiddleware(BlockMiddleware):
                 title = title.replace(f"<<protected-{i}>>", protected)
             return title
 
-        # 2. コロン（:または：）の前にある2文字以上の連続大文字単語を保護
+        # 2. コロン（:または：）の前の部分が1単語だけなら保護
         # コロンの位置を探す
         colon_match = re.search(r'[:：]', title)
         if colon_match:
-            before_colon = title[:colon_match.start()]
-            after_colon = title[colon_match.start():]
-            
-            # コロン前の部分で2文字以上の連続大文字を保護
-            before_colon = re.sub(r'\b([A-Z]{2,})\b', protect_match, before_colon)
-            
-            title = before_colon + after_colon
+            before_part = title[:colon_match.start()].strip()
+            # スペースが含まれていない（＝1単語）なら保護
+            if before_part and not re.search(r'\s', before_part):
+                # すでに別の保護（中括弧など）がかかっていない場合のみ保護
+                if not before_part.startswith("<<protected-"):
+                    prefix = title[:colon_match.start()]
+                    protected_prefix = re.sub(r'\S+', protect_match, prefix, count=1)
+                    title = protected_prefix + title[colon_match.start():]
         
         # titlecaseライブラリを使用
         formatted = titlecase(title)
