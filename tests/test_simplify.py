@@ -368,3 +368,26 @@ def test_brace_colon():
 """
     simplified_bib = simplify_bibtex_entry(raw_bib, abbreviation_mode="both")
     assert simplified_bib == expected_simplified_bib
+
+
+def test_simplify_arxiv_preprint_journal_entry():
+    """journal に arXiv preprint 形式が入った article を正規化できることを確認する。"""
+    raw_bib = """@article{fizz,
+  title={Hello World},
+  author={Fizz Buzz},
+  journal={arXiv preprint arXiv:0000.00000},
+  year={2026},
+  url = "https://arxiv.org/abs/0000.00000"
+}"""
+
+    expected_simplified_bib = """@article{fizz,
+    title = {{Hello World}},
+    author = "Fizz Buzz",
+    journal = "arXiv:0000.00000",
+    year = "2026",
+    url = "https://arxiv.org/abs/0000.00000",
+}
+"""
+
+    simplified_bib = simplify_bibtex_entry(raw_bib, abbreviation_mode="both")
+    assert simplified_bib == expected_simplified_bib
