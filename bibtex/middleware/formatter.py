@@ -57,7 +57,14 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
 
     def _is_arxiv(self, entry: Entry) -> bool:
         """arXiv論文かどうか判定"""
-        return (prefix := entry.fields_dict.get("archiveprefix")) and prefix.value == "arXiv"
+        if (prefix := entry.fields_dict.get("archiveprefix")) and prefix.value == "arXiv":
+            return True
+
+        journal_field = entry.fields_dict.get("journal")
+        if not journal_field:
+            return False
+
+        return self._extract_arxiv_identifier_from_journal(journal_field.value) is not None
     
 
     def _create_arxiv_journal(self, entry: Entry) -> Entry:
@@ -67,7 +74,25 @@ class BibTeXFormatterMiddleware(BlockMiddleware):
             journal_value = f"arXiv:{eprint_value}"
             # journalフィールドを追加
             entry.fields.append(Field(key="journal", value=journal_value))
+            return entry
+
+        if "journal" in entry.fields_dict:
+            arxiv_id = self._extract_arxiv_identifier_from_journal(entry.fields_dict["journal"].value)
+            if arxiv_id:
+                normalized_value = f"arXiv:{arxiv_id}"
+                for field in entry.fields:
+                    if field.key.lower() == "journal":
+                        field.value = normalized_value
+                        break
         return entry
+
+
+    def _extract_arxiv_identifier_from_journal(self, journal_value: str) -> str | None:
+        """journal文字列からarXiv IDを抽出する。"""
+        match = re.search(r"arxiv\s*(?::|preprint\s+arxiv:)\s*([A-Za-z0-9./-]+)", journal_value, flags=re.IGNORECASE)
+        if not match:
+            return None
+        return match.group(1)
     
 
     def _create_url_from_doi(self, entry: Entry) -> Entry:
